@@ -1,0 +1,9 @@
+http://localhost:3000/login
+http://localhost:3000/register
+http://localhost:3000/forgot-password?email=
+http://localhost:3000/verify-otp
+http://localhost:3000/reset-password
+http://localhost:3000/password-success
+http://localhost:3000/overview
+http://localhost:3000/tracker
+http://localhost:3000/marketplace
