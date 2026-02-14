@@ -1,11 +1,8 @@
 {
-  "/password-success/page": "app/password-success/page.js",
+  "/not-found": "app/not-found.js",
   "/forgot-password/page": "app/forgot-password/page.js",
   "/verify-otp/page": "app/verify-otp/page.js",
   "/reset-password/page": "app/reset-password/page.js",
-  "/(dashboard)/overview/page": "app/(dashboard)/overview/page.js",
-  "/(dashboard)/tracker/page": "app/(dashboard)/tracker/page.js",
-  "/(dashboard)/marketplace/page": "app/(dashboard)/marketplace/page.js",
-  "/(auth)/login/page": "app/(auth)/login/page.js",
-  "/(auth)/register/page": "app/(auth)/register/page.js"
+  "/(auth)/register/page": "app/(auth)/register/page.js",
+  "/(dashboard)/overview/page": "app/(dashboard)/overview/page.js"
 }

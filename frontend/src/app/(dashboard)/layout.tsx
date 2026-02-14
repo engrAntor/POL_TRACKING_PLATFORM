@@ -3,12 +3,13 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutGrid, Activity, ShoppingCart, Bell, Menu, X } from 'lucide-react';
+import { LayoutGrid, Activity, ShoppingCart, Bell, Menu, X, ClipboardList } from 'lucide-react';
 
 const menuItems = [
     { name: 'Overview', href: '/overview', icon: LayoutGrid },
     { name: 'Usage Tracker', href: '/tracker', icon: Activity },
     { name: 'Marketplace', href: '/marketplace', icon: ShoppingCart },
+    { name: 'Inventory', href: '/inventory', icon: ClipboardList },
     { name: 'AI Notifications', href: '/notifications', icon: Bell },
 ];
 

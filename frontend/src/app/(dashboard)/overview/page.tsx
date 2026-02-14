@@ -1,6 +1,6 @@
 "use client";
 
-import { Package, Clock, TrendingDown, RefreshCw, AlertTriangle, AlertCircle, XCircle } from 'lucide-react';
+import { Package, Clock, TrendingDown, RefreshCw, AlertTriangle, AlertCircle, XCircle, ChevronRight } from 'lucide-react';
 
 const statsCards = [
     {
@@ -69,6 +69,21 @@ const alerts = [
         description: '{POL Name} is currently out of stock.',
     },
 ];
+
+const buyOrders = [
+    { id: '1401', name: 'Premium Diesel', buyer: 'Global Fuels Ltd', seller: 'Loxanity', quantity: '1000', status: 'Delivery Pending', updated: 'Just Now' },
+    { id: '1401', name: 'Premium Diesel', buyer: 'Global Fuels Ltd', seller: 'Loxanity', quantity: '1000', status: 'Delivery Pending', updated: 'Just Now' },
+    { id: '1401', name: 'Premium Diesel', buyer: 'Global Fuels Ltd', seller: 'Loxanity', quantity: '1000', status: 'Delivery Pending', updated: 'Just Now' },
+    { id: '1401', name: 'Premium Diesel', buyer: 'Global Fuels Ltd', seller: 'Loxanity', quantity: '1000', status: 'Delivered', updated: '20 min ago' },
+    { id: '1401', name: 'Premium Diesel', buyer: 'Global Fuels Ltd', seller: 'Loxanity', quantity: '1000', status: 'Delivered', updated: '20 min ago' },
+];
+
+const topProducts = Array(5).fill({
+    name: 'Premium Diesel',
+    category: 'Petroleum',
+    quantity: '1000 gallons',
+    revenue: '$ 3,099'
+});
 
 export default function OverviewPage() {
     const maxValue = 600;
@@ -164,6 +179,128 @@ export default function OverviewPage() {
                     <a href="#" className="block text-center text-sm text-primary hover:underline mt-4">
                         View All Alerts
                     </a>
+                </div>
+            </div>
+
+            {/* Buy Order Status Table */}
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                    <h2 className="text-lg font-semibold text-gray-900">Buy Order Status</h2>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left">
+                        <thead className="text-xs text-gray-500 uppercase bg-gray-50/50">
+                            <tr>
+                                <th className="px-6 py-4 font-medium">Order ID</th>
+                                <th className="px-6 py-4 font-medium">POL Name</th>
+                                <th className="px-6 py-4 font-medium">Buyer</th>
+                                <th className="px-6 py-4 font-medium">Seller</th>
+                                <th className="px-6 py-4 font-medium">Quantity</th>
+                                <th className="px-6 py-4 font-medium">Status</th>
+                                <th className="px-6 py-4 font-medium">Last Updated</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                            {buyOrders.map((order, i) => (
+                                <tr key={i} className="hover:bg-gray-50/50 transition-colors">
+                                    <td className="px-6 py-4 text-gray-500">{order.id}</td>
+                                    <td className="px-6 py-4 text-gray-900 font-medium">{order.name}</td>
+                                    <td className="px-6 py-4 text-gray-600">{order.buyer}</td>
+                                    <td className="px-6 py-4 text-gray-600">{order.seller}</td>
+                                    <td className="px-6 py-4 text-gray-600">{order.quantity}</td>
+                                    <td className="px-6 py-4">
+                                        <span className={`px-3 py-1 rounded-full text-xs font-medium inline-block
+                                            ${order.status === 'Delivered'
+                                                ? 'bg-green-100 text-green-700'
+                                                : 'bg-orange-100 text-orange-700'
+                                            }`}>
+                                            {order.status}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 text-gray-900 flex items-center gap-2">
+                                        {order.updated}
+                                        <ChevronRight className="h-4 w-4 text-gray-400" />
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+                <div className="p-4 border-t border-gray-100 bg-gray-50/30">
+                    <a href="#" className="flex items-center justify-center text-sm font-medium text-gray-600 hover:text-gray-900">
+                        View All Orders
+                    </a>
+                </div>
+            </div>
+
+            {/* Top Products Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-6">
+                {/* Top 30 POL Sold */}
+                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                    <div className="p-6 border-b border-gray-100">
+                        <h2 className="text-lg font-semibold text-gray-900">Top 30 POL Sold</h2>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left">
+                            <thead className="text-xs text-gray-500 uppercase bg-gray-50/50">
+                                <tr>
+                                    <th className="px-6 py-4 font-medium">POL Name</th>
+                                    <th className="px-6 py-4 font-medium text-orange-500">Category</th>
+                                    <th className="px-6 py-4 font-medium">Quantity</th>
+                                    <th className="px-6 py-4 font-medium text-right">Revenue</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {topProducts.map((item, i) => (
+                                    <tr key={i} className="hover:bg-gray-50/50">
+                                        <td className="px-6 py-4 text-gray-600">{item.name}</td>
+                                        <td className="px-6 py-4 text-orange-500">{item.category}</td>
+                                        <td className="px-6 py-4 text-gray-600">{item.quantity}</td>
+                                        <td className="px-6 py-4 text-gray-900 font-medium text-right">{item.revenue}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div className="p-4 border-t border-gray-100">
+                        <a href="#" className="flex items-center justify-center text-sm font-medium text-green-700 hover:text-green-800 underline">
+                            View All Orders
+                        </a>
+                    </div>
+                </div>
+
+                {/* Top 30 POL Requested */}
+                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                    <div className="p-6 border-b border-gray-100">
+                        <h2 className="text-lg font-semibold text-gray-900">Top 30 POL Requested</h2>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left">
+                            <thead className="text-xs text-gray-500 uppercase bg-gray-50/50">
+                                <tr>
+                                    <th className="px-6 py-4 font-medium">POL Name</th>
+                                    <th className="px-6 py-4 font-medium text-orange-500">Category</th>
+                                    <th className="px-6 py-4 font-medium">Total Requests</th>
+                                    <th className="px-6 py-4 font-medium text-right">Revenue</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {topProducts.map((item, i) => (
+                                    <tr key={i} className="hover:bg-gray-50/50">
+                                        <td className="px-6 py-4 text-gray-600">{item.name}</td>
+                                        <td className="px-6 py-4 text-orange-500">{item.category}</td>
+                                        <td className="px-6 py-4 text-gray-600">{item.quantity}</td>
+                                        <td className="px-6 py-4 text-gray-900 font-medium text-right">{item.revenue}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div className="p-4 border-t border-gray-100">
+                        <a href="#" className="flex items-center justify-center text-sm font-medium text-green-700 hover:text-green-800 underline">
+                            View All Orders
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

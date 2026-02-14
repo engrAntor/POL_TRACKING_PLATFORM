@@ -1,10 +1,5 @@
 {
   "pages": {
-    "/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/page.js"
-    ],
     "/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -41,11 +36,6 @@
       "static/chunks/main-app.js",
       "static/chunks/app/reset-password/page.js"
     ],
-    "/password-success/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/password-success/page.js"
-    ],
     "/(dashboard)/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -56,20 +46,10 @@
       "static/chunks/main-app.js",
       "static/chunks/app/(dashboard)/overview/page.js"
     ],
-    "/(dashboard)/tracker/page": [
+    "/not-found": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(dashboard)/tracker/page.js"
-    ],
-    "/(dashboard)/marketplace/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(dashboard)/marketplace/page.js"
-    ],
-    "/(dashboard)/notifications/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(dashboard)/notifications/page.js"
+      "static/chunks/app/not-found.js"
     ]
   }
 }
