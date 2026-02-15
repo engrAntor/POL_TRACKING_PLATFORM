@@ -105,7 +105,8 @@ export default function DashboardLayout({
                             {pathname === '/overview' ? 'Dashboard' :
                                 pathname === '/tracker' ? 'Tracker' :
                                     pathname === '/marketplace' ? 'Marketplace' :
-                                        pathname === '/notifications' ? 'AI Notifications' : 'Dashboard'}
+                                        pathname === '/notifications' ? 'AI Notifications' :
+                                            pathname === '/inventory' ? 'Inventory' : 'Dashboard'}
                         </h1>
                     </div>
 
