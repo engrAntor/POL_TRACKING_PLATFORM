@@ -18,6 +18,11 @@ module.exports = {
                 secondary: {
                     DEFAULT: "#325C7C"
                 },
+                accent: {
+                    DEFAULT: "#F97316", // Orange
+                    hover: "#ea580c",
+                    green: "#22c55e", // Bright Green
+                },
                 sidebar: "#0E3B1F",
             },
             fontFamily: {

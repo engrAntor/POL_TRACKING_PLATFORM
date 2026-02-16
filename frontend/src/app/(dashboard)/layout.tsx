@@ -35,7 +35,7 @@ export default function DashboardLayout({
             <aside
                 className={`
                     fixed lg:static inset-y-0 left-0 z-30
-                    w-[260px] bg-[#0E3B1F] flex flex-col min-h-screen
+                    w-[260px] bg-[#021f11] flex flex-col min-h-screen
                     transform transition-transform duration-300 ease-in-out
                     ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
                 `}

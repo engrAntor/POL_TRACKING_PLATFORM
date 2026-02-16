@@ -7,3 +7,21 @@ http://localhost:3000/password-success
 http://localhost:3000/overview
 http://localhost:3000/tracker
 http://localhost:3000/marketplace
+
+Every pages is responsive to any screen size(Mobile,Tablet,Desktop) or even in when the screen minimize.
+
+
+I have successfully uploaded the updated codes to your GitHub repository.
+
+Summary of Uploaded Changes:
+
+Usage Tracker Page: Updated table columns, added "Add New POL" modal with "Usage Rate" field.
+Notifications Page: Designed with "Communication Logs" layout and mock data.
+Inventory Page: Created new page with filters, search, and status badges.
+Auth Pages: Added "Company" and "Designation" fields to Sign Up.
+The changes are now available on the remote repository.
+
+
+Error
+You have exhausted your quota on this model.
+You have reached the quota limit for this model. You can resume using this model at 2/16/2026, 4:30:23 AM. You can upgrade to the Google AI Ultra plan to receive the highest rate limits.
