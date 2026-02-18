@@ -1,24 +1,33 @@
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
 import {
-    LayoutGrid, Activity, ShoppingCart, Bell, Menu, X,
-    ClipboardList, HeadphonesIcon, ChevronRight, Eye, EyeOff,
-    LogOut, ChevronDown,
+    LayoutDashboard,
+    Users,
+    ShieldCheck,
+    ShoppingBag,
+    AlertTriangle,
+    LogOut,
+    Bell,
+    ChevronRight,
+    Eye,
+    EyeOff,
+    X,
+    ChevronDown,
+    Menu,
 } from 'lucide-react';
 
 const menuItems = [
-    { name: 'Overview',         href: '/overview',       icon: LayoutGrid      },
-    { name: 'Usage Tracker',    href: '/tracker',        icon: Activity        },
-    { name: 'Marketplace',      href: '/marketplace',    icon: ShoppingCart    },
-    { name: 'Inventory',        href: '/inventory',      icon: ClipboardList   },
-    { name: 'AI Notifications', href: '/notifications',  icon: Bell            },
-    { name: 'Contact Us',       href: '/contact',        icon: HeadphonesIcon  },
+    { name: 'DashBoard',       href: '/superadmin/overview',        icon: LayoutDashboard },
+    { name: 'User Management', href: '/superadmin/users',           icon: Users           },
+    { name: 'Administrators',  href: '/superadmin/administrators',  icon: ShieldCheck     },
+    { name: 'Order',           href: '/superadmin/orders',          icon: ShoppingBag     },
+    { name: 'User Issues',     href: '/superadmin/issues',          icon: AlertTriangle   },
 ];
 
-// ── Role dropdown (reused in Account Setting modal) ───────────────────────────
+// ── Role dropdown ─────────────────────────────────────────────────────────────
 function RoleDropdown({ value, onChange }: { value: string; onChange: (v: string) => void }) {
     const [open, setOpen] = useState(false);
     return (
@@ -52,8 +61,8 @@ function RoleDropdown({ value, onChange }: { value: string; onChange: (v: string
 // ── Password input with show/hide ─────────────────────────────────────────────
 function PwInput({ label, show, onToggle }: { label: string; show: boolean; onToggle: () => void }) {
     return (
-        <div className="flex items-center gap-4">
-            <label className="w-36 text-sm font-medium text-gray-700 shrink-0">{label}</label>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+            <label className="sm:w-36 text-sm font-medium text-gray-700 shrink-0">{label}</label>
             <div className="relative flex-1">
                 <input
                     type={show ? "text" : "password"}
@@ -71,13 +80,14 @@ function PwInput({ label, show, onToggle }: { label: string; show: boolean; onTo
     );
 }
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-    const pathname  = usePathname();
-    const router    = useRouter();
+export default function SuperAdminLayout({ children }: { children: React.ReactNode }) {
+    const router   = useRouter();
+    const pathname = usePathname();
+    const [authorized, setAuthorized]   = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     // Profile panel
-    const [showProfile,  setShowProfile]  = useState(false);
+    const [showProfile, setShowProfile] = useState(false);
     const profileRef = useRef<HTMLDivElement>(null);
 
     // Modals
@@ -85,12 +95,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const [showPassword, setShowPassword] = useState(false);
 
     // Account modal state
-    const [accountRole, setAccountRole] = useState("Admin");
+    const [accountRole, setAccountRole] = useState("Super Admin");
 
     // Password show/hide
     const [showOldPw,     setShowOldPw]     = useState(false);
     const [showNewPw,     setShowNewPw]     = useState(false);
     const [showConfirmPw, setShowConfirmPw] = useState(false);
+
+    useEffect(() => {
+        const auth = sessionStorage.getItem("superadmin_authenticated");
+        if (!auth) {
+            router.replace("/superadmindash");
+        } else {
+            setAuthorized(true);
+        }
+    }, [router]);
 
     // Close profile panel when clicking outside
     useEffect(() => {
@@ -104,11 +123,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }, [showProfile]);
 
     const handleLogout = () => {
-        router.replace("/login");
+        sessionStorage.removeItem("superadmin_authenticated");
+        router.replace("/superadmindash");
     };
 
+    if (!authorized) return null;
+
     return (
-        <div className="flex h-screen min-h-0 bg-gray-50 overflow-hidden">
+        <div className="flex h-screen bg-gray-50 overflow-hidden">
+
             {/* Mobile Sidebar Overlay */}
             {isSidebarOpen && (
                 <div
@@ -121,22 +144,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <aside
                 className={`
                     fixed lg:static inset-y-0 left-0 z-30
-                    w-[260px] flex flex-col min-h-screen
+                    w-[220px] shrink-0 flex flex-col min-h-screen
                     transform transition-transform duration-300 ease-in-out
                     ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
                 `}
                 style={{ background: '#1a2e22' }}
             >
-                {/* Logo Section */}
-                <div className="flex items-center justify-between lg:justify-start px-4 lg:px-0 pt-3 h-[64px]">
-                    <div className="flex items-center gap-0 -ml-6 lg:-ml-6">
+                {/* Logo */}
+                <div className="flex items-center justify-between px-4 lg:px-0 lg:justify-start pt-3 h-[64px]">
+                    <div className="flex items-center gap-0 -ml-2 lg:-ml-6">
                         <img
                             src="/assets/logo/logo.png"
                             alt="AVN Logo"
                             className="h-[130px] w-[130px] object-contain brightness-0 invert"
                         />
-                        <span className="-ml-8 text-lg font-semibold text-white">Admin</span>
+                        <span className="-ml-8 text-base font-semibold text-white">Super Admin</span>
                     </div>
+                    {/* Mobile close button */}
                     <button
                         onClick={() => setIsSidebarOpen(false)}
                         className="lg:hidden text-white p-2"
@@ -146,64 +170,76 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex-1 px-4 pt-12 overflow-y-auto">
-                    <ul className="space-y-1">
-                        {menuItems.map((item) => {
-                            const isActive = pathname === item.href;
-                            const Icon = item.icon;
-                            return (
-                                <li key={item.name}>
-                                    <Link
-                                        href={item.href}
-                                        onClick={() => setIsSidebarOpen(false)}
-                                        className={`flex items-center gap-5 rounded-lg px-4 py-4 text-base font-medium transition-colors ${isActive
-                                            ? 'text-white shadow-sm'
-                                            : 'text-white/65 hover:bg-white/10 hover:text-white'
-                                        }`}
-                                        style={isActive ? { background: '#2d5a3d' } : {}}
-                                    >
-                                        <Icon className="h-6 w-6" />
-                                        {item.name}
-                                        {isActive && <span className="ml-auto text-white">›</span>}
-                                    </Link>
-                                </li>
-                            );
-                        })}
-                    </ul>
+                <nav className="flex-1 px-3 pt-12 space-y-1 overflow-y-auto">
+                    {menuItems.map((item) => {
+                        const Icon = item.icon;
+                        const isActive =
+                            pathname === item.href ||
+                            (item.href !== '/superadmin/overview' && pathname.startsWith(item.href));
+                        return (
+                            <Link
+                                key={item.name}
+                                href={item.href}
+                                onClick={() => setIsSidebarOpen(false)}
+                                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 ${
+                                    isActive
+                                        ? 'text-white shadow-sm'
+                                        : 'text-white/65 hover:text-white hover:bg-white/10'
+                                }`}
+                                style={isActive ? { background: '#2d5a3d' } : {}}
+                            >
+                                <Icon className="w-[18px] h-[18px] shrink-0" />
+                                <span>{item.name}</span>
+                            </Link>
+                        );
+                    })}
                 </nav>
+
+                {/* Logout */}
+                <div className="px-3 pb-6">
+                    <button
+                        onClick={handleLogout}
+                        className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-sm font-medium text-white/60 hover:text-white hover:bg-white/10 transition-all duration-150"
+                    >
+                        <LogOut className="w-[18px] h-[18px] shrink-0" />
+                        <span>Logout</span>
+                    </button>
+                </div>
             </aside>
 
             {/* Main Content */}
             <div className="flex-1 flex flex-col overflow-hidden w-full">
-                {/* Header */}
-                <header className="flex items-center justify-between bg-white px-4 lg:px-8 h-[80px] border-b border-gray-200 shrink-0">
+                {/* Top Header */}
+                <header className="flex items-center justify-between bg-white px-4 lg:px-8 h-[64px] lg:h-[80px] border-b border-gray-200 shrink-0">
                     <div className="flex items-center gap-3">
+                        {/* Mobile hamburger */}
                         <button
                             onClick={() => setIsSidebarOpen(true)}
                             className="lg:hidden p-2 -ml-2 text-gray-600 hover:text-gray-900"
                         >
                             <Menu className="h-6 w-6" />
                         </button>
-                        <h1 className="text-lg lg:text-xl font-semibold text-gray-900 truncate">
-                            {pathname === '/overview'      ? 'Dashboard'        :
-                             pathname === '/tracker'       ? 'Tracker'          :
-                             pathname === '/marketplace'   ? 'Marketplace'      :
-                             pathname === '/notifications' ? 'AI Notifications' :
-                             pathname === '/inventory'     ? 'Inventory'        :
-                             pathname === '/contact'       ? 'Contact Us'       : 'Dashboard'}
+                        <h1 className="text-base lg:text-xl font-semibold text-gray-900 truncate">
+                            {pathname === '/superadmin/overview'       ? 'Dashboard'       :
+                             pathname === '/superadmin/users'          ? 'User Management' :
+                             pathname === '/superadmin/administrators' ? 'Administrators'  :
+                             pathname === '/superadmin/orders'         ? 'Order'           :
+                             pathname === '/superadmin/issues'         ? 'User Issues'     : 'Dashboard'}
                         </h1>
                     </div>
 
-                    <div className="flex items-center gap-2 lg:gap-4">
-                        <button className="relative p-2 text-gray-500 hover:text-gray-700">
-                            <Bell className="h-5 w-5" />
+                    <div className="flex items-center gap-2 lg:gap-3">
+                        {/* Notification bell */}
+                        <button className="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
+                            <Bell className="w-5 h-5 text-gray-500" />
+                            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
                         </button>
 
                         {/* Avatar — clickable, opens profile panel */}
                         <div className="relative" ref={profileRef}>
                             <button
                                 onClick={() => setShowProfile((v) => !v)}
-                                className="h-10 w-10 lg:h-11 lg:w-11 rounded-full bg-gray-100 overflow-hidden shrink-0 border-2 border-white shadow-md ring-1 ring-gray-200 hover:ring-gray-400 transition-all"
+                                className="w-9 h-9 lg:w-10 lg:h-10 rounded-full overflow-hidden shrink-0 border-2 border-white shadow-md ring-1 ring-gray-200 hover:ring-gray-400 transition-all"
                             >
                                 <img
                                     src="/assets/images/my_dp.png"
@@ -214,10 +250,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
                             {/* Profile Panel */}
                             {showProfile && (
-                                <div className="absolute right-0 top-14 w-[220px] bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden">
+                                <div className="absolute right-0 top-12 lg:top-14 w-[200px] sm:w-[220px] bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden">
                                     {/* Avatar + name + badge */}
                                     <div className="flex flex-col items-center pt-5 pb-3 px-4">
-                                        <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow ring-1 ring-gray-200 mb-2">
+                                        <div className="w-14 h-14 lg:w-16 lg:h-16 rounded-full overflow-hidden border-2 border-white shadow ring-1 ring-gray-200 mb-2">
                                             <img
                                                 src="/assets/images/my_dp.png"
                                                 alt="Profile"
@@ -229,7 +265,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                             className="mt-1 px-3 py-0.5 rounded-full text-xs font-medium text-white"
                                             style={{ background: '#0E3B1F' }}
                                         >
-                                            Admin
+                                            Super Admin
                                         </span>
                                     </div>
 
@@ -270,7 +306,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </header>
 
                 {/* Page Content */}
-                <main className="flex-1 overflow-y-auto p-4 lg:p-6 w-full">
+                <main className="flex-1 overflow-y-auto p-4 lg:p-7 bg-gray-50">
                     {children}
                 </main>
             </div>
@@ -278,11 +314,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {/* ── Account Setting Modal ─────────────────────────────────────── */}
             {showAccount && (
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
                     onClick={() => setShowAccount(false)}
                 >
                     <div
-                        className="relative bg-white rounded-2xl shadow-xl w-full max-w-[420px] mx-4 px-8 py-8"
+                        className="relative bg-white rounded-2xl shadow-xl w-full max-w-[420px] px-6 sm:px-8 py-8"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <button
@@ -296,12 +332,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
                         <div className="space-y-4">
                             {[
-                                { label: "Name",  type: "text",  placeholder: "Antor Das"           },
-                                { label: "Email", type: "email", placeholder: "antor@example.com"   },
-                                { label: "Phone", type: "tel",   placeholder: "+880 1700-000000"    },
+                                { label: "Name",  type: "text",  placeholder: "Antor Das"         },
+                                { label: "Email", type: "email", placeholder: "antor@example.com" },
+                                { label: "Phone", type: "tel",   placeholder: "+880 1700-000000"  },
                             ].map(({ label, type, placeholder }) => (
-                                <div key={label} className="flex items-center gap-4">
-                                    <label className="w-16 text-sm font-medium text-gray-700 shrink-0">{label}</label>
+                                <div key={label} className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                                    <label className="sm:w-16 text-sm font-medium text-gray-700 shrink-0">{label}</label>
                                     <input
                                         type={type}
                                         placeholder={placeholder}
@@ -309,8 +345,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                     />
                                 </div>
                             ))}
-                            <div className="flex items-center gap-4">
-                                <label className="w-16 text-sm font-medium text-gray-700 shrink-0">Role</label>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                                <label className="sm:w-16 text-sm font-medium text-gray-700 shrink-0">Role</label>
                                 <RoleDropdown value={accountRole} onChange={setAccountRole} />
                             </div>
                         </div>
@@ -336,11 +372,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {/* ── Password Change Modal ─────────────────────────────────────── */}
             {showPassword && (
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
                     onClick={() => setShowPassword(false)}
                 >
                     <div
-                        className="relative bg-white rounded-2xl shadow-xl w-full max-w-[460px] mx-4 px-8 py-8"
+                        className="relative bg-white rounded-2xl shadow-xl w-full max-w-[460px] px-6 sm:px-8 py-8"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <button
@@ -353,9 +389,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         <h2 className="text-center text-lg font-bold text-gray-900 mb-7">Change Password</h2>
 
                         <div className="space-y-4">
-                            <PwInput label="Old Password"          show={showOldPw}     onToggle={() => setShowOldPw((v) => !v)}     />
-                            <PwInput label="New Password"          show={showNewPw}     onToggle={() => setShowNewPw((v) => !v)}     />
-                            <PwInput label="Re Type New Password"  show={showConfirmPw} onToggle={() => setShowConfirmPw((v) => !v)} />
+                            <PwInput label="Old Password"         show={showOldPw}     onToggle={() => setShowOldPw((v) => !v)}     />
+                            <PwInput label="New Password"         show={showNewPw}     onToggle={() => setShowNewPw((v) => !v)}     />
+                            <PwInput label="Re Type New Password" show={showConfirmPw} onToggle={() => setShowConfirmPw((v) => !v)} />
                         </div>
 
                         <div className="flex gap-3 mt-8">

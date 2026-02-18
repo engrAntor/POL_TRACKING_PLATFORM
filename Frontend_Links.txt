@@ -25,3 +25,57 @@ The changes are now available on the remote repository.
 Error
 You have exhausted your quota on this model.
 You have reached the quota limit for this model. You can resume using this model at 2/16/2026, 4:30:23 AM. You can upgrade to the Google AI Ultra plan to receive the highest rate limits.
+
+
+
+17/2/26
+
+Landing Page (Pixel-perfect implementation)
+Marketplace (Buy/Sell/Filters/Unified View)
+Authentication Pages (Login/Signup)
+Dashboard (Sidebar/Layout)
+
+
+Public Pages
+
+Landing Page:
+http://localhost:3000/
+
+Login:
+http://localhost:3000/login
+
+Register (Sign Up): 
+http://localhost:3000/register
+
+Forgot Password:
+http://localhost:3000/forgot-password
+http://localhost:3000/verify-otp
+http://localhost:3000/reset-password
+http://localhost:3000/password-success
+
+Terms of Service: 
+http://localhost:3000/terms
+
+Dashboard Module
+Overview (Dashboard Home): 
+http://localhost:3000/overview
+Usage Tracker (Add/Manage POL): 
+http://localhost:3000/tracker
+Inventory (View Stock): 
+http://localhost:3000/inventory
+Notifications (Logs): 
+http://localhost:3000/notifications
+Marketplace Module
+Marketplace Home: 
+http://localhost:3000/marketplace
+Product Details (Buy): 
+http://localhost:3000/marketplace/1 (Using ID '1' as example)
+Sell Listing Form: 
+http://localhost:3000/marketplace/sell/6 (Using ID '6' as example)
+Utility / Verified Routes
+Password Reset Success: 
+http://localhost:3000/password-success
+Reset Password: 
+http://localhost:3000/reset-password
+Verify OTP: 
+http://localhost:3000/verify-otp
