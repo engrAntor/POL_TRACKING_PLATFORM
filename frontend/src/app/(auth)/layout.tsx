@@ -35,7 +35,7 @@ export default function AuthLayout({
             </div>
 
             {/* Right Side - Form Content */}
-            <div className="flex w-full flex-col items-center justify-start px-6 pt-0 pb-32 lg:w-[45%] xl:w-[50%] bg-white overflow-y-auto">
+            <div className="flex w-full flex-col items-center justify-start px-4 sm:px-6 pt-0 pb-16 sm:pb-32 lg:w-[45%] xl:w-[50%] bg-white overflow-y-auto">
                 <div className="w-full max-w-[600px] space-y-8">
                     <div className="flex justify-center mb-8">
                         {/* AVN Logo */}
@@ -44,8 +44,7 @@ export default function AuthLayout({
                             <img
                                 src="/assets/logo/logo.png"
                                 alt="AVN Logo"
-                                width={300}
-                                height={300}
+                                className="w-auto max-w-[180px] sm:max-w-[240px] lg:max-w-[300px]"
                             />
                         </div>
                     </div>

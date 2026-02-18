@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from 'react';
-import { Search, Filter, ChevronDown } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Search, Filter, ChevronDown, Sparkles, X, Send, MessageSquareText } from 'lucide-react';
 
 interface InventoryItem {
     id: number;
@@ -122,6 +122,24 @@ const inventoryData: InventoryItem[] = [
 export default function InventoryPage() {
     const [searchQuery, setSearchQuery] = useState('');
 
+    // Chat state
+    const [isChatOpen, setIsChatOpen] = useState(false);
+    const [chatInput, setChatInput] = useState('');
+    const [messages, setMessages] = useState([
+        { id: 1, text: "Hello! I am Marie. How can I help you today? You can ask me to add inventory or find products in the marketplace.", sender: 'ai' }
+    ]);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages]);
+
+    const sendMessage = () => {
+        if (!chatInput.trim()) return;
+        setMessages(prev => [...prev, { id: prev.length + 1, text: chatInput, sender: 'user' }]);
+        setChatInput('');
+    };
+
     return (
         <div className="space-y-6">
             {/* Search Bar */}
@@ -207,6 +225,79 @@ export default function InventoryPage() {
                         ))}
                     </tbody>
                 </table>
+            </div>
+
+            {/* AI Chat Widget */}
+            <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+                {isChatOpen && (
+                    <div className="mb-4 w-[380px] bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden flex flex-col" style={{ height: '500px' }}>
+                        {/* Header */}
+                        <div className="bg-[#1a2e22] px-4 py-3 flex items-center gap-3">
+                            <div className="w-12 h-12 bg-[#0d1a10] rounded-xl flex items-center justify-center shadow-lg shadow-green-900/40 border border-green-900/30">
+                                <Sparkles className="w-6 h-6 text-green-400" />
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-white font-bold text-base leading-none mb-1">Ask Marie</h3>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-gray-400 text-xs">Always Active</span>
+                                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block"></span>
+                                    <span className="text-gray-400 text-xs">v2.5</span>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setIsChatOpen(false)}
+                                className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center text-white hover:bg-white/10 transition-colors"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        {/* Messages Area */}
+                        <div className="flex-1 overflow-y-auto bg-gray-100 p-4 space-y-3">
+                            {messages.map(msg => (
+                                <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                    <div className={`max-w-[82%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
+                                        msg.sender === 'user'
+                                            ? 'bg-[#1a2e22] text-white rounded-br-sm'
+                                            : 'bg-white text-gray-800 shadow-sm rounded-tl-sm'
+                                    }`}>
+                                        {msg.text}
+                                    </div>
+                                </div>
+                            ))}
+                            <div ref={messagesEndRef} />
+                        </div>
+
+                        <div className="h-px bg-gray-200" />
+
+                        {/* Input Area */}
+                        <div className="p-4 bg-white">
+                            <div className="flex items-center gap-2 bg-[#e6f4ec] rounded-xl px-4 py-3 border border-green-100">
+                                <input
+                                    type="text"
+                                    value={chatInput}
+                                    onChange={(e) => setChatInput(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+                                    placeholder="Ask anything"
+                                    className="flex-1 bg-transparent text-gray-600 placeholder-gray-400 text-sm focus:outline-none"
+                                />
+                                <button onClick={sendMessage} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-[#1a2e22] transition-colors">
+                                    <Send className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Floating Chat Button */}
+                <div className="w-16 h-16 rounded-full bg-[#b7e4c7]/50 flex items-center justify-center">
+                    <button
+                        onClick={() => setIsChatOpen(!isChatOpen)}
+                        className="w-12 h-12 bg-[#d8f3dc] rounded-full flex items-center justify-center shadow-sm hover:bg-[#c2ebd0] transition-colors"
+                    >
+                        <MessageSquareText className="w-6 h-6 text-[#2d6a4f]" />
+                    </button>
+                </div>
             </div>
         </div>
     );

@@ -65,7 +65,7 @@ export default function NotificationsPage() {
                         className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden"
                     >
                         {/* Top Section */}
-                        <div className="flex items-center justify-between p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-3 p-4">
                             <div className="flex items-center gap-4">
                                 {/* Icon */}
                                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50 text-primary">

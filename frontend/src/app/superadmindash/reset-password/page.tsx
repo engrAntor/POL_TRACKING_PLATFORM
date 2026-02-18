@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 
-export default function ResetPasswordPage() {
+export default function SuperAdminResetPasswordPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -18,9 +18,7 @@ export default function ResetPasswordPage() {
                 />
             </div>
 
-            {/* Content w/ max width for centering */}
             <div className="w-full max-w-[500px]">
-                {/* Header Text */}
                 <div className="mb-8 sm:mb-10 text-center">
                     <h2 className="text-[2rem] font-semibold text-gray-900 tracking-tight">Enter new password</h2>
                 </div>
@@ -44,11 +42,7 @@ export default function ResetPasswordPage() {
                                 onClick={() => setShowPassword(!showPassword)}
                                 className="mr-4 text-gray-400 hover:text-gray-600 focus:outline-none"
                             >
-                                {showPassword ? (
-                                    <EyeOff className="h-5 w-5" aria-hidden="true" />
-                                ) : (
-                                    <Eye className="h-5 w-5" aria-hidden="true" />
-                                )}
+                                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                             </button>
                         </div>
                     </div>
@@ -71,11 +65,7 @@ export default function ResetPasswordPage() {
                                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                                 className="mr-4 text-gray-400 hover:text-gray-600 focus:outline-none"
                             >
-                                {showConfirmPassword ? (
-                                    <EyeOff className="h-5 w-5" aria-hidden="true" />
-                                ) : (
-                                    <Eye className="h-5 w-5" aria-hidden="true" />
-                                )}
+                                {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                             </button>
                         </div>
                     </div>

@@ -237,7 +237,7 @@ export default function TrackerPage() {
                 </table>
             </div>
 
-            <div className="mt-8 flex gap-4">
+            <div className="mt-8 flex flex-wrap gap-4">
                 <button
                     className="bg-[#0E3B1F] text-white px-8 py-3 rounded-lg font-medium hover:bg-[#0E3B1F]/90 transition-colors"
                 >

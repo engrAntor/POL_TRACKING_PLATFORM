@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 
-export default function PasswordSuccessPage() {
+export default function SuperAdminPasswordSuccessPage() {
     return (
         <div className="flex min-h-screen flex-col items-center justify-start bg-white px-4 py-8 sm:px-6 sm:pt-12">
             {/* Logo */}
@@ -13,9 +13,7 @@ export default function PasswordSuccessPage() {
                 />
             </div>
 
-            {/* Content w/ max width for centering */}
             <div className="w-full max-w-[500px]">
-                {/* Header Text */}
                 <div className="mb-6 text-center">
                     <h2 className="text-[2rem] font-semibold text-gray-900 tracking-tight leading-tight">
                         Password Updated<br />Successfully!
@@ -25,13 +23,12 @@ export default function PasswordSuccessPage() {
                     </p>
                 </div>
 
-                {/* Login Button */}
                 <div className="mt-10">
                     <Link
-                        href="/login"
+                        href="/superadmindash"
                         className="block w-full rounded-lg bg-primary py-3 text-center text-[17px] font-semibold text-white shadow-sm hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors duration-200"
                     >
-                        Continue to Login
+                        Continue to Super Admin Login
                     </Link>
                 </div>
             </div>

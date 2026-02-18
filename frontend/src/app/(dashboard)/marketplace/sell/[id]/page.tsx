@@ -130,7 +130,7 @@ export default function SellListingPage({ params }: { params: { id: string } }) 
                             </p>
                         </div>
 
-                        <div className="pt-4 border-t border-gray-100 flex gap-4">
+                        <div className="pt-4 border-t border-gray-100 flex flex-wrap gap-4">
                             <Link href="/marketplace" className="flex-1 text-center py-3 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors">
                                 Cancel
                             </Link>
