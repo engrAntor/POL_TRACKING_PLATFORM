@@ -54,7 +54,7 @@ export default function MarketplacePage() {
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [chatInput, setChatInput] = useState('');
     const [messages, setMessages] = useState([
-        { id: 1, text: "Hello! I am Marie. How can I help you today? You can ask me to add inventory or find products in the marketplace.", sender: 'ai' }
+        { id: 1, text: "Hello! I am Lilian. How can I help you today? You can ask me to add inventory or find products in the marketplace.", sender: 'ai' }
     ]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -434,7 +434,7 @@ export default function MarketplacePage() {
                                 <Sparkles className="w-6 h-6 text-green-400" />
                             </div>
                             <div className="flex-1">
-                                <h3 className="text-white font-bold text-base leading-none mb-1">Ask Marie</h3>
+                                <h3 className="text-white font-bold text-base leading-none mb-1">Ask Lilian</h3>
                                 <div className="flex items-center gap-1.5">
                                     <span className="text-gray-400 text-xs">Always Active</span>
                                     <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block"></span>
