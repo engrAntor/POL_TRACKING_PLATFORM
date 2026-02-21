@@ -4,15 +4,15 @@ import { useState } from "react";
 import { Trash2, X } from "lucide-react";
 
 const allIssues = [
-    { id: "#1233", name: "Kathryn Murp",  email1: "bockely@att.com",    email2: "bockely@att.com",    status: "Pending",  active: true  },
-    { id: "#1233", name: "Devon Lane",    email1: "csilvers@rizon.com",  email2: "csilvers@rizon.com", status: "Resolved", active: false },
-    { id: "#1233", name: "Foysal Rahman", email1: "qamaho@mail.com",     email2: "qamaho@mail.com",    status: "Pending",  active: true  },
-    { id: "#1233", name: "Hari Danang",   email1: "xterris@gmail.com",   email2: "xterris@gmail.com",  status: "Pending",  active: true  },
-    { id: "#1233", name: "Floyd Miles",   email1: "xterris@gmail.com",   email2: "xterris@gmail.com",  status: "Pending",  active: true  },
-    { id: "#1233", name: "Eleanor Pena",  email1: "xterris@gmail.com",   email2: "xterris@gmail.com",  status: "Pending",  active: true  },
-    { id: "#1233", name: "Devon Lane",    email1: "xterris@gmail.com",   email2: "xterris@gmail.com",  status: "Pending",  active: true  },
-    { id: "#1233", name: "Hari Danang",   email1: "xterris@gmail.com",   email2: "xterris@gmail.com",  status: "Pending",  active: true  },
-    { id: "#1233", name: "Devon Lane",    email1: "xterris@gmail.com",   email2: "xterris@gmail.com",  status: "Pending",  active: true  },
+    { id: "#1233", name: "Kathryn Murp",  email: "bockely@att.com",     phone: "+1 (555) 234-5678",  status: "Pending",  active: true  },
+    { id: "#1233", name: "Devon Lane",    email: "csilvers@rizon.com",  phone: "+1 (555) 876-5432",  status: "Resolved", active: false },
+    { id: "#1233", name: "Foysal Rahman", email: "qamaho@mail.com",     phone: "+880 1712-345678",   status: "Pending",  active: true  },
+    { id: "#1233", name: "Hari Danang",   email: "xterris@gmail.com",   phone: "+62 812-3456-789",   status: "Pending",  active: true  },
+    { id: "#1233", name: "Floyd Miles",   email: "xterris@gmail.com",   phone: "+1 (555) 321-9876",  status: "Pending",  active: true  },
+    { id: "#1233", name: "Eleanor Pena",  email: "xterris@gmail.com",   phone: "+1 (555) 654-3210",  status: "Pending",  active: true  },
+    { id: "#1233", name: "Devon Lane",    email: "xterris@gmail.com",   phone: "+1 (555) 789-0123",  status: "Pending",  active: true  },
+    { id: "#1233", name: "Hari Danang",   email: "xterris@gmail.com",   phone: "+62 813-7654-321",   status: "Pending",  active: true  },
+    { id: "#1233", name: "Devon Lane",    email: "xterris@gmail.com",   phone: "+1 (555) 456-7890",  status: "Pending",  active: true  },
 ];
 
 const PAGE_SIZE = 10;
@@ -83,7 +83,7 @@ export default function UserIssuesPage() {
                         <th className="text-left px-6 py-5 text-gray-500 font-medium">SL no.</th>
                         <th className="text-left px-4 py-5 text-gray-500 font-medium">Full Name</th>
                         <th className="text-left px-4 py-5 text-gray-500 font-medium">Email</th>
-                        <th className="text-left px-4 py-5 text-gray-500 font-medium">Email</th>
+                        <th className="text-left px-4 py-5 text-gray-500 font-medium">Phone Number</th>
                         <th className="text-left px-4 py-5 text-gray-500 font-medium">Status</th>
                         <th className="text-left px-4 py-5 text-gray-500 font-medium">Switch</th>
                         <th className="text-right px-6 py-5 text-gray-500 font-medium">Action</th>
@@ -96,10 +96,10 @@ export default function UserIssuesPage() {
                             <tr key={i} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                                 <td className="px-6 py-4 text-gray-700">{issue.id}</td>
                                 <td className="px-4 py-4 text-gray-800 font-medium whitespace-nowrap">{issue.name}</td>
-                                <td className="px-4 py-4 text-gray-600 whitespace-nowrap">{issue.email1}</td>
-                                <td className="px-4 py-4 text-gray-600 whitespace-nowrap">{issue.email2}</td>
+                                <td className="px-4 py-4 text-gray-600 whitespace-nowrap">{issue.email}</td>
+                                <td className="px-4 py-4 text-gray-600 whitespace-nowrap">{issue.phone}</td>
                                 <td className="px-4 py-4">
-                                    <span className={issue.status === "Pending" ? "text-orange-500 font-medium" : "text-gray-400 font-medium"}>
+                                    <span className={issue.status === "Pending" ? "text-[#0E3B1F] font-medium" : "text-gray-400 font-medium"}>
                                         {issue.status}
                                     </span>
                                 </td>

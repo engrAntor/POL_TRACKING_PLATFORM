@@ -121,8 +121,8 @@ export default function Home() {
                 <div className="container mx-auto px-6 z-10 pt-24 pb-12 w-full">
                     <div className="relative max-w-5xl mx-auto text-center">
                         <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-6 leading-tight tracking-tight">
-                            Your <span className="text-[#F97316]">$200K+</span> in Annual POL<br className="hidden md:block" />
-                            Waste is About to Become <span className="text-[#F97316]">Profit</span>
+                            Your <span className="text-[#4ADE80]">$200K+</span> in Annual POL<br className="hidden md:block" />
+                            Waste is About to Become <span className="text-[#4ADE80]">Profit</span>
                         </h1>
 
                         <p className="text-base sm:text-lg md:text-xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
@@ -161,22 +161,22 @@ export default function Home() {
                         <StatCard
                             value="$200K - $500K"
                             label="In Annual POL Savings"
-                            icon={<Wallet className="w-6 h-6 text-[#F97316]" />}
+                            icon={<Wallet className="w-6 h-6 text-[#0E3B1F]" />}
                         />
                         <StatCard
                             value="$100K - $300K"
                             label="Recovery Revenue"
-                            icon={<RefreshCw className="w-6 h-6 text-[#F97316]" />}
+                            icon={<RefreshCw className="w-6 h-6 text-[#0E3B1F]" />}
                         />
                         <StatCard
                             value="40-90%"
                             label="Cost Reduction"
-                            icon={<TrendingUp className="w-6 h-6 text-[#F97316]" />}
+                            icon={<TrendingUp className="w-6 h-6 text-[#0E3B1F]" />}
                         />
                         <StatCard
                             value="10-15"
                             label="Labor Hours Saved"
-                            icon={<Clock className="w-6 h-6 text-[#F97316]" />}
+                            icon={<Clock className="w-6 h-6 text-[#0E3B1F]" />}
                         />
                     </div>
                 </div>
@@ -186,7 +186,7 @@ export default function Home() {
             <section id="how-it-works" className="py-24 bg-gray-50">
                 <div className="container mx-auto px-6">
                     <div className="text-center mb-16">
-                        <span className="text-[#F97316] font-bold tracking-wider uppercase text-sm mb-2 block">How It Works</span>
+                        <span className="text-[#0E3B1F] font-bold tracking-wider uppercase text-sm mb-2 block">How It Works</span>
                         <h2 className="text-3xl md:text-4xl font-bold text-gray-900">From Waste to Profit in 4 Simple Steps</h2>
                     </div>
 
@@ -269,7 +269,7 @@ export default function Home() {
             <section id="roi-calculator" className="py-24 bg-white relative">
                 <div className="container mx-auto px-6">
                     <div className="text-center mb-16">
-                        <div className="inline-block px-4 py-1 rounded-full bg-[#F97316]/10 text-[#F97316] border border-[#F97316]/20 mb-4">
+                        <div className="inline-block px-4 py-1 rounded-full bg-[#0E3B1F]/10 text-[#0E3B1F] border border-[#0E3B1F]/20 mb-4">
                             <span className="text-sm font-bold">Calculator</span>
                         </div>
                         <h2 className="text-3xl md:text-4xl font-bold text-gray-900">See Your Potential Recovery</h2>
@@ -281,7 +281,7 @@ export default function Home() {
                             <div>
                                 <div className="flex justify-between mb-6">
                                     <label className="font-bold text-gray-900 text-lg">Annual POL Waste</label>
-                                    <span className="font-bold text-[#F97316] text-lg">${wasteAmount.toLocaleString()}</span>
+                                    <span className="font-bold text-[#0E3B1F] text-lg">${wasteAmount.toLocaleString()}</span>
                                 </div>
                                 <input
                                     type="range"
@@ -290,7 +290,7 @@ export default function Home() {
                                     step="500"
                                     value={wasteAmount}
                                     onChange={(e) => setWasteAmount(parseInt(e.target.value))}
-                                    className="w-full h-3 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-[#F97316]"
+                                    className="w-full h-3 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-[#0E3B1F]"
                                 />
                                 <div className="flex justify-between mt-3 text-sm text-gray-400 font-medium">
                                     <span>$1K</span>
@@ -301,7 +301,7 @@ export default function Home() {
                             <div>
                                 <div className="flex justify-between mb-6">
                                     <label className="font-bold text-gray-900 text-lg">Recovery Rate</label>
-                                    <span className="font-bold text-[#F97316] text-lg">{recoveryRate}%</span>
+                                    <span className="font-bold text-[#0E3B1F] text-lg">{recoveryRate}%</span>
                                 </div>
                                 <input
                                     type="range"
@@ -309,7 +309,7 @@ export default function Home() {
                                     max="100"
                                     value={recoveryRate}
                                     onChange={(e) => setRecoveryRate(parseInt(e.target.value))}
-                                    className="w-full h-3 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-[#F97316]"
+                                    className="w-full h-3 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-[#0E3B1F]"
                                 />
                                 <div className="flex justify-between mt-3 text-sm text-gray-400 font-medium">
                                     <span>10%</span>
@@ -378,11 +378,6 @@ export default function Home() {
                         <p className="text-white font-semibold text-base leading-relaxed mb-6">
                             We're finalizing partners soon. Secure your spot in the network that'll define how the industry handles POL forever.
                         </p>
-                        <div>
-                            <p className="text-[#F97316] font-bold text-base">Nicholas Tan</p>
-                            <p className="text-gray-400 text-sm mt-1">Hon Vice President, Singapore Institute of Aerospace Engineers</p>
-                            <p className="text-gray-400 text-sm">CEO, Sino Aerospace Ventures</p>
-                        </div>
                     </div>
 
                 </div>
@@ -442,10 +437,10 @@ export default function Home() {
 function StatCard({ value, label, icon }: { value: string, label: string, icon: React.ReactNode }) {
     return (
         <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.05)] hover:shadow-lg transition-all hover:-translate-y-1 group text-center">
-            <div className="w-14 h-14 bg-orange-50 rounded-full flex items-center justify-center mb-6 mx-auto group-hover:bg-orange-100 transition-colors">
+            <div className="w-14 h-14 bg-green-50 rounded-full flex items-center justify-center mb-6 mx-auto group-hover:bg-green-100 transition-colors">
                 {icon}
             </div>
-            <div className="text-2xl font-bold text-[#F97316] mb-2">{value}</div>
+            <div className="text-2xl font-bold text-[#0E3B1F] mb-2">{value}</div>
             <div className="text-sm font-medium text-gray-500">{label}</div>
         </div>
     );
@@ -454,10 +449,10 @@ function StatCard({ value, label, icon }: { value: string, label: string, icon: 
 function StepCard({ number, title, description, icon }: { number: string, title: string, description: string, icon: React.ReactNode }) {
     return (
         <div className="relative p-8 bg-white rounded-2xl border border-gray-100 h-full shadow-sm hover:shadow-md transition-shadow">
-            <div className="absolute -top-4 -right-4 w-10 h-10 bg-[#F97316] text-white rounded-full flex items-center justify-center font-bold text-base shadow-lg ring-4 ring-gray-50">
+            <div className="absolute -top-4 -right-4 w-10 h-10 bg-[#0E3B1F] text-white rounded-full flex items-center justify-center font-bold text-base shadow-lg ring-4 ring-gray-50">
                 {number}
             </div>
-            <div className="w-14 h-14 bg-orange-50 text-[#F97316] rounded-xl flex items-center justify-center mb-6">
+            <div className="w-14 h-14 bg-green-50 text-[#0E3B1F] rounded-xl flex items-center justify-center mb-6">
                 {icon}
             </div>
             <h3 className="font-bold text-xl text-gray-900 mb-3">{title}</h3>

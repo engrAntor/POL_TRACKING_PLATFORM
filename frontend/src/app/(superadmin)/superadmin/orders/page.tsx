@@ -66,7 +66,7 @@ function ViewModal({ order, onClose }: { order: Order; onClose: () => void }) {
                 {/* Brand */}
                 <div className="flex items-center justify-between py-2">
                     <span className="text-sm font-medium text-gray-700">Brand</span>
-                    <span className="text-sm font-semibold text-orange-500">Shell</span>
+                    <span className="text-sm font-semibold text-[#0E3B1F]">Shell</span>
                 </div>
 
                 {/* Quantity */}
@@ -160,7 +160,7 @@ export default function OrdersPage() {
                                     <td className="px-4 py-4 text-gray-600 whitespace-nowrap">{order.location}</td>
                                     <td className="px-4 py-4 text-gray-600 whitespace-nowrap">{order.qty}</td>
                                     <td className="px-4 py-4">
-                                        <span className={order.status === "Approved" ? "text-orange-500 font-medium" : "text-gray-400 font-medium"}>
+                                        <span className={order.status === "Approved" ? "text-[#0E3B1F] font-medium" : "text-gray-400 font-medium"}>
                                             {order.status}
                                         </span>
                                     </td>

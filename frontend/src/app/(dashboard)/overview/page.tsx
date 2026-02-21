@@ -7,8 +7,8 @@ const statsCards = [
         title: 'Total POL Items',
         value: '102',
         icon: Package,
-        bgColor: 'bg-orange-50',
-        iconColor: 'text-orange-500'
+        bgColor: 'bg-green-50',
+        iconColor: 'text-[#0E3B1F]'
     },
     {
         title: 'Near Expiry',
@@ -34,7 +34,7 @@ const statsCards = [
 ];
 
 const stockData = [
-    { name: 'High-Grade Diesel', value: 450, color: 'bg-orange-400' },
+    { name: 'High-Grade Diesel', value: 450, color: 'bg-[#0E3B1F]' },
     { name: 'Synth-X Engine Oil', value: 350, color: 'bg-blue-400' },
     { name: 'Heavy Duty Grease', value: 280, color: 'bg-teal-400' },
 ];
@@ -212,7 +212,7 @@ export default function OverviewPage() {
                                         <span className={`px-3 py-1 rounded-full text-xs font-medium inline-block
                                             ${order.status === 'Delivered'
                                                 ? 'bg-green-100 text-green-700'
-                                                : 'bg-orange-100 text-orange-700'
+                                                : 'bg-green-100 text-[#0E3B1F]'
                                             }`}>
                                             {order.status}
                                         </span>
@@ -245,7 +245,7 @@ export default function OverviewPage() {
                             <thead className="text-xs text-gray-500 uppercase bg-gray-50/50">
                                 <tr>
                                     <th className="px-6 py-4 font-medium">POL Name</th>
-                                    <th className="px-6 py-4 font-medium text-orange-500">Category</th>
+                                    <th className="px-6 py-4 font-medium text-[#0E3B1F]">Category</th>
                                     <th className="px-6 py-4 font-medium">Quantity</th>
                                     <th className="px-6 py-4 font-medium text-right">Revenue</th>
                                 </tr>
@@ -254,7 +254,7 @@ export default function OverviewPage() {
                                 {topProducts.map((item, i) => (
                                     <tr key={i} className="hover:bg-gray-50/50">
                                         <td className="px-6 py-4 text-gray-600">{item.name}</td>
-                                        <td className="px-6 py-4 text-orange-500">{item.category}</td>
+                                        <td className="px-6 py-4 text-[#0E3B1F]">{item.category}</td>
                                         <td className="px-6 py-4 text-gray-600">{item.quantity}</td>
                                         <td className="px-6 py-4 text-gray-900 font-medium text-right">{item.revenue}</td>
                                     </tr>
@@ -279,7 +279,7 @@ export default function OverviewPage() {
                             <thead className="text-xs text-gray-500 uppercase bg-gray-50/50">
                                 <tr>
                                     <th className="px-6 py-4 font-medium">POL Name</th>
-                                    <th className="px-6 py-4 font-medium text-orange-500">Category</th>
+                                    <th className="px-6 py-4 font-medium text-[#0E3B1F]">Category</th>
                                     <th className="px-6 py-4 font-medium">Total Requests</th>
                                     <th className="px-6 py-4 font-medium text-right">Revenue</th>
                                 </tr>
@@ -288,7 +288,7 @@ export default function OverviewPage() {
                                 {topProducts.map((item, i) => (
                                     <tr key={i} className="hover:bg-gray-50/50">
                                         <td className="px-6 py-4 text-gray-600">{item.name}</td>
-                                        <td className="px-6 py-4 text-orange-500">{item.category}</td>
+                                        <td className="px-6 py-4 text-[#0E3B1F]">{item.category}</td>
                                         <td className="px-6 py-4 text-gray-600">{item.quantity}</td>
                                         <td className="px-6 py-4 text-gray-900 font-medium text-right">{item.revenue}</td>
                                     </tr>

@@ -325,7 +325,7 @@ export default function MarketplacePage() {
                         {/* Location & Rating */}
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-1 text-sm text-gray-500">
-                                <MapPin className="h-4 w-4 text-[#F97316]" />
+                                <MapPin className="h-4 w-4 text-[#0E3B1F]" />
                                 {product.location}
                             </div>
 
@@ -380,13 +380,13 @@ export default function MarketplacePage() {
                             <h2 className="text-xl font-bold text-gray-900 leading-tight">{selectedProduct.name}</h2>
                             <p className="text-sm text-gray-500 mb-1">( {selectedProduct.type} )</p>
                             <div className="flex items-center gap-1.5 text-sm text-gray-500 mb-5">
-                                <MapPin className="h-4 w-4 text-[#F97316]" />
+                                <MapPin className="h-4 w-4 text-[#0E3B1F]" />
                                 {selectedProduct.location}
                             </div>
                             <div className="border-t border-gray-100 pt-4 space-y-4">
                                 <div className="flex items-center justify-between">
                                     <span className="font-semibold text-gray-900">Brand</span>
-                                    <span className="text-[#F97316] font-semibold">Shell</span>
+                                    <span className="text-[#0E3B1F] font-semibold">Shell</span>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="font-semibold text-gray-900">Quantity</span>
@@ -408,7 +408,7 @@ export default function MarketplacePage() {
                             </div>
                             <div className="border-t border-gray-100 mt-4 pt-4 flex justify-between items-center mb-6">
                                 <span className="font-bold text-gray-900">Price</span>
-                                <span className="text-[#F97316] font-bold">{selectedProduct.price}/Liter</span>
+                                <span className="text-[#0E3B1F] font-bold">{selectedProduct.price}/Liter</span>
                             </div>
                             <div className="space-y-3">
                                 <button className="w-full bg-[#1a2e22] text-white py-3 rounded-xl font-semibold hover:bg-[#2d5a45] transition-colors">

@@ -44,17 +44,17 @@ export default function RegisterPage() {
                     />
                 </div>
 
-                {/* Designation */}
+                {/* Job Title */}
                 <div className="group relative flex items-center rounded-lg border border-gray-300 bg-white px-0 py-2.5 transition-all focus-within:border-primary hover:border-gray-400">
                     <div className="flex min-w-[110px] justify-center border-r border-gray-200 py-0">
-                        <span className="text-base font-normal text-gray-400">Designation</span>
+                        <span className="text-base font-normal text-gray-400">Job Title</span>
                     </div>
                     <input
                         type="text"
-                        name="designation"
-                        id="designation"
+                        name="jobTitle"
+                        id="jobTitle"
                         className="flex-1 border-none bg-transparent px-5 text-base text-gray-900 placeholder-gray-300 outline-none focus:ring-0"
-                        placeholder="Enter your designation"
+                        placeholder="Enter your job title"
                     />
                 </div>
 

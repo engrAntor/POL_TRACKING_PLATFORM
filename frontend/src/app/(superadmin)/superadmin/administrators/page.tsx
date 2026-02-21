@@ -180,18 +180,20 @@ export default function AdministratorsPage() {
                         </h2>
                         <div className="space-y-5">
                             {[
-                                { label: "Name",  type: "text"  },
-                                { label: "Email", type: "email" },
-                                { label: "Phone", type: "tel"   },
+                                { label: "Name",      type: "text"  },
+                                { label: "Email",     type: "email" },
+                                { label: "Phone",     type: "tel"   },
+                                { label: "Company",   type: "text"  },
+                                { label: "Job Title", type: "text"  },
                             ].map(({ label, type }) => (
                                 <div key={label} className="flex items-center gap-4">
-                                    <label className="w-14 text-sm font-medium text-gray-700 shrink-0">{label}</label>
+                                    <label className="w-16 text-sm font-medium text-gray-700 shrink-0">{label}</label>
                                     <input type={type}
                                         className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
                                 </div>
                             ))}
                             <div className="flex items-center gap-4">
-                                <label className="w-14 text-sm font-medium text-gray-700 shrink-0">Role</label>
+                                <label className="w-16 text-sm font-medium text-gray-700 shrink-0">Role</label>
                                 <RoleDropdown value={createRole} onChange={setCreateRole} />
                             </div>
                         </div>
@@ -224,22 +226,32 @@ export default function AdministratorsPage() {
                         </h2>
                         <div className="space-y-5">
                             <div className="flex items-center gap-4">
-                                <label className="w-14 text-sm font-medium text-gray-700 shrink-0">Name</label>
+                                <label className="w-16 text-sm font-medium text-gray-700 shrink-0">Name</label>
                                 <input type="text" defaultValue={editTarget.name}
                                     className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
                             </div>
                             <div className="flex items-center gap-4">
-                                <label className="w-14 text-sm font-medium text-gray-700 shrink-0">Email</label>
+                                <label className="w-16 text-sm font-medium text-gray-700 shrink-0">Email</label>
                                 <input type="email" defaultValue={editTarget.email}
                                     className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
                             </div>
                             <div className="flex items-center gap-4">
-                                <label className="w-14 text-sm font-medium text-gray-700 shrink-0">Phone</label>
+                                <label className="w-16 text-sm font-medium text-gray-700 shrink-0">Phone</label>
                                 <input type="tel" defaultValue={editTarget.phone}
                                     className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
                             </div>
                             <div className="flex items-center gap-4">
-                                <label className="w-14 text-sm font-medium text-gray-700 shrink-0">Role</label>
+                                <label className="w-16 text-sm font-medium text-gray-700 shrink-0">Company</label>
+                                <input type="text"
+                                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <label className="w-16 text-sm font-medium text-gray-700 shrink-0">Job Title</label>
+                                <input type="text"
+                                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <label className="w-16 text-sm font-medium text-gray-700 shrink-0">Role</label>
                                 <RoleDropdown value={editRole} onChange={setEditRole} />
                             </div>
                         </div>

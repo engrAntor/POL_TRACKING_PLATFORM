@@ -150,7 +150,7 @@ export default function ProductDetailsPage({ params }: { params: { id: string } 
                         <div className="border border-gray-200 rounded-xl p-5">
                             <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Location</h3>
                             <div className="flex items-center gap-3 text-gray-700 bg-gray-50 p-3 rounded-lg mb-4">
-                                <MapPin className="h-5 w-5 text-[#F97316]" />
+                                <MapPin className="h-5 w-5 text-[#0E3B1F]" />
                                 <span className="font-medium">{product.location}</span>
                             </div>
                             <div className="w-full h-32 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 text-sm">
@@ -183,7 +183,7 @@ export default function ProductDetailsPage({ params }: { params: { id: string } 
                             <h2 className="text-2xl font-bold text-gray-900 leading-tight">{product.name}</h2>
                             <p className="text-base text-gray-500 mb-1">( {product.type} )</p>
                             <div className="flex items-center gap-1.5 text-base text-gray-500 mb-6">
-                                <MapPin className="h-5 w-5 text-[#F97316]" />
+                                <MapPin className="h-5 w-5 text-[#0E3B1F]" />
                                 {product.location}
                             </div>
 
@@ -193,7 +193,7 @@ export default function ProductDetailsPage({ params }: { params: { id: string } 
                                 <div className="space-y-4">
                                     <div>
                                         <span className="text-gray-500 text-sm">Brand</span>
-                                        <p className="text-[#F97316] font-semibold text-base mt-0.5">{product.brand}</p>
+                                        <p className="text-[#0E3B1F] font-semibold text-base mt-0.5">{product.brand}</p>
                                     </div>
                                     <div>
                                         <span className="text-gray-500 text-sm">Batch</span>
@@ -234,7 +234,7 @@ export default function ProductDetailsPage({ params }: { params: { id: string } 
 
                                     <div className="border-t border-gray-100 pt-4 flex justify-between items-center">
                                         <span className="font-bold text-gray-900 text-lg">Price</span>
-                                        <span className="text-[#F97316] font-bold text-lg">{product.price}/{product.priceUnit}</span>
+                                        <span className="text-[#0E3B1F] font-bold text-lg">{product.price}/{product.priceUnit}</span>
                                     </div>
 
                                     <div className="space-y-3 pt-1">
