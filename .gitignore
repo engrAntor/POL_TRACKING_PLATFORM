@@ -45,7 +45,25 @@ __pycache__/
 venv/
 .venv/
 env/
-.env/
+*.egg-info/
+
+# Django
+db.sqlite3
+db.sqlite3-journal
+staticfiles/
+media/
+*.log
+
+# Backend secrets
+backend/.env
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
 
 # OS specific
 Thumbs.db
+Desktop.ini
+
+# Claude
+.claude/
