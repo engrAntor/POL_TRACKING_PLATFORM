@@ -1,7 +1,10 @@
 # POL Tracking Platform - Frontend Links
 
-- **Admin Panel:** https://poltrackingbyantor.netlify.app/
-- **Super Admin Panel:** https://poltrackingbyantor.netlify.app/superadmindash
+**Admin Panel:**<br>
+https://poltrackingbyantor.netlify.app/
+
+**Super Admin Panel:**<br>
+https://poltrackingbyantor.netlify.app/superadmindash
 
 ## Auth Pages
 - `/login` - Admin Login
