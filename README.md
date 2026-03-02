@@ -1,6 +1,6 @@
 # POL Tracking Platform
 
-A full-stack inventory and order management system for tracking **Petroleum, Oil, and Lubricants (POL)** across organizations. Features a dual-role system with separate dashboards for Admin and Super Admin users, a marketplace for buying/selling POL products, and a complete authentication system with email verification and OTP-based password recovery.
+A full-stack inventory and order management system built to **track, manage, and sell Petroleum, Oil, and Lubricants (POL) before expiry**. Features a dual-role system with separate dashboards for Admin and Super Admin users, a marketplace for buying/selling POL products, AI-powered assistants (Ask Lilian & Ask Marie), n8n workflow automation, and a complete authentication system with email verification and OTP-based password recovery.
 
 **Admin Panel:**<br>
 https://poltrackingbyantor.netlify.app/
