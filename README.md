@@ -115,7 +115,7 @@ https://poltrackingbyantor.netlify.app/superadmindash
 ### Prerequisites
 - Python 3.10+
 - Node.js 18+
-- Redis (via Docker or local install)
+- Redis (via Docker)
 
 ### Backend Setup
 ```bash
