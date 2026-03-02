@@ -7,7 +7,6 @@ class Order(models.Model):
         ('pending', 'Pending'),
         ('approved', 'Approved'),
         ('cancelled', 'Cancelled'),
-        ('delivered', 'Delivered'),
     )
 
     user = models.ForeignKey(
