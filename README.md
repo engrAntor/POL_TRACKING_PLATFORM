@@ -38,6 +38,8 @@ https://poltrackingbyantor.netlify.app/superadmindash
 
 ### Super Admin Panel
 - **Dashboard** — Total users, daily registrations, monthly user activity chart
+- **Profile** — Edit profile, change password, upload avatar
+- **Notifications** — New User Issue, New User Registered, New Order Placed
 - **Administrator Management** — Create, edit, and delete admin/superadmin accounts
 - **User Management** — View, enable/disable, and delete admin users
 - **Order Management** — View all orders, update status (Pending/Approved/Cancelled), toggle active/inactive, delete
