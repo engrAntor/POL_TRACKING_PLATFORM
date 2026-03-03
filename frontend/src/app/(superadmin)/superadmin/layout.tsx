@@ -90,6 +90,10 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
     const [showProfile, setShowProfile] = useState(false);
     const profileRef = useRef<HTMLDivElement>(null);
 
+    // Notification panel
+    const [showNotif, setShowNotif] = useState(false);
+    const notifRef = useRef<HTMLDivElement>(null);
+
     // Modals
     const [showAccount,  setShowAccount]  = useState(false);
     const [showPassword, setShowPassword] = useState(false);
@@ -111,16 +115,19 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
         }
     }, [router]);
 
-    // Close profile panel when clicking outside
+    // Close profile/notif panel when clicking outside
     useEffect(() => {
         function handleClick(e: MouseEvent) {
             if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
                 setShowProfile(false);
             }
+            if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+                setShowNotif(false);
+            }
         }
-        if (showProfile) document.addEventListener("mousedown", handleClick);
+        if (showProfile || showNotif) document.addEventListener("mousedown", handleClick);
         return () => document.removeEventListener("mousedown", handleClick);
-    }, [showProfile]);
+    }, [showProfile, showNotif]);
 
     const handleLogout = () => {
         sessionStorage.removeItem("superadmin_authenticated");
@@ -230,10 +237,36 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
 
                     <div className="flex items-center gap-2 lg:gap-3">
                         {/* Notification bell */}
-                        <button className="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
-                            <Bell className="w-5 h-5 text-gray-500" />
-                            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
-                        </button>
+                        <div className="relative" ref={notifRef}>
+                            <button
+                                onClick={() => { setShowNotif((v) => !v); setShowProfile(false); }}
+                                className="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+                            >
+                                <Bell className="w-5 h-5 text-gray-500" />
+                                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
+                            </button>
+
+                            {showNotif && (
+                                <div className="absolute right-0 top-12 w-[300px] bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden">
+                                    <div className="px-4 py-3 border-b border-gray-100">
+                                        <p className="text-sm font-semibold text-gray-900">Notifications</p>
+                                    </div>
+                                    <div className="max-h-[280px] overflow-y-auto">
+                                        {[
+                                            { title: "New User Registered", desc: "john.doe@example.com just created an account", time: "5 min ago" },
+                                            { title: "New Order Placed", desc: "Order #1058 — 500L Diesel from Admin Foysal", time: "20 min ago" },
+                                            { title: "Issue Reported", desc: "Admin Devon Lane submitted a support request", time: "1 hr ago" },
+                                        ].map((n, i) => (
+                                            <div key={i} className="px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-50">
+                                                <p className="text-sm font-medium text-gray-800">{n.title}</p>
+                                                <p className="text-xs text-gray-500 mt-0.5">{n.desc}</p>
+                                                <p className="text-[10px] text-gray-400 mt-1">{n.time}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
 
                         {/* Avatar — clickable, opens profile panel */}
                         <div className="relative" ref={profileRef}>
@@ -331,13 +364,28 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
                         <h2 className="text-center text-lg font-bold text-gray-900 mb-7">Account Setting</h2>
 
                         <div className="space-y-4">
+                            {/* Profile Picture */}
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                                <label className="sm:w-20 text-sm font-medium text-gray-700 shrink-0">Photo</label>
+                                <div className="flex items-center gap-3 flex-1">
+                                    <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-300 shrink-0">
+                                        <img src="/assets/images/my_dp.png" alt="Avatar" className="w-full h-full object-cover object-top" />
+                                    </div>
+                                    <label className="cursor-pointer px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+                                        Upload
+                                        <input type="file" accept="image/*" className="hidden" />
+                                    </label>
+                                </div>
+                            </div>
                             {[
-                                { label: "Name",  type: "text",  placeholder: "Antor Das"         },
-                                { label: "Email", type: "email", placeholder: "antor@example.com" },
-                                { label: "Phone", type: "tel",   placeholder: "+880 1700-000000"  },
+                                { label: "Name",      type: "text",  placeholder: "Antor Das"         },
+                                { label: "Email",     type: "email", placeholder: "antor@example.com" },
+                                { label: "Phone",     type: "tel",   placeholder: "+880 1700-000000"  },
+                                { label: "Company",   type: "text",  placeholder: "Sparktech Agency"  },
+                                { label: "Job Title", type: "text",  placeholder: "Software Engineer" },
                             ].map(({ label, type, placeholder }) => (
                                 <div key={label} className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
-                                    <label className="sm:w-16 text-sm font-medium text-gray-700 shrink-0">{label}</label>
+                                    <label className="sm:w-20 text-sm font-medium text-gray-700 shrink-0">{label}</label>
                                     <input
                                         type={type}
                                         placeholder={placeholder}
@@ -345,10 +393,6 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
                                     />
                                 </div>
                             ))}
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
-                                <label className="sm:w-16 text-sm font-medium text-gray-700 shrink-0">Role</label>
-                                <RoleDropdown value={accountRole} onChange={setAccountRole} />
-                            </div>
                         </div>
 
                         <div className="flex gap-3 mt-8">

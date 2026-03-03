@@ -180,15 +180,17 @@ export default function AdministratorsPage() {
                         </h2>
                         <div className="space-y-5">
                             {[
-                                { label: "Name",      type: "text"  },
-                                { label: "Email",     type: "email" },
-                                { label: "Phone",     type: "tel"   },
-                                { label: "Company",   type: "text"  },
-                                { label: "Job Title", type: "text"  },
+                                { label: "First Name", type: "text"     },
+                                { label: "Last Name",  type: "text"     },
+                                { label: "Email",      type: "email"    },
+                                { label: "Password",   type: "password" },
+                                { label: "Phone",      type: "tel"      },
+                                { label: "Company",    type: "text"     },
+                                { label: "Job Title",  type: "text"     },
                             ].map(({ label, type }) => (
                                 <div key={label} className="flex items-center gap-4">
-                                    <label className="w-16 text-sm font-medium text-gray-700 shrink-0">{label}</label>
-                                    <input type={type}
+                                    <label className="w-20 text-sm font-medium text-gray-700 shrink-0">{label}</label>
+                                    <input type={type} placeholder={label}
                                         className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
                                 </div>
                             ))}
@@ -238,6 +240,11 @@ export default function AdministratorsPage() {
                             <div className="flex items-center gap-4">
                                 <label className="w-16 text-sm font-medium text-gray-700 shrink-0">Phone</label>
                                 <input type="tel" defaultValue={editTarget.phone}
+                                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <label className="w-16 text-sm font-medium text-gray-700 shrink-0">Password</label>
+                                <input type="password" placeholder="New password (optional)"
                                     className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
                             </div>
                             <div className="flex items-center gap-4">
