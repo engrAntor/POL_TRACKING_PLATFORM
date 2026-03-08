@@ -2,6 +2,26 @@ from django.db import models
 from django.conf import settings
 
 
+class SuperAdminNotification(models.Model):
+    TYPE_CHOICES = (
+        ('new_order', 'New Order Placed'),
+        ('new_user', 'New User Registered'),
+        ('new_issue', 'New User Issue'),
+    )
+
+    type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.get_type_display()} — {self.title}"
+
+
 class Order(models.Model):
     STATUS_CHOICES = (
         ('pending', 'Pending'),

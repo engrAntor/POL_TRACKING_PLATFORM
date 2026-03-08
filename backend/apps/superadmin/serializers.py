@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from apps.accounts.models import User
-from .models import Order
+from .models import Order, SuperAdminNotification
 
 
 # ── User Management ───────────────────────────────────────────────────────────
@@ -37,20 +37,15 @@ class CreateAdministratorSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'first_name', 'last_name', 'email', 'phone',
-            'company', 'job_title', 'role', 'password',
+            'company', 'job_title', 'password',
         ]
-
-    def validate_role(self, value):
-        if value not in ('admin', 'superadmin'):
-            raise serializers.ValidationError('Role must be admin or superadmin.')
-        return value
 
     def create(self, validated_data):
         password = validated_data.pop('password')
         user = User(**validated_data)
+        user.role = 'superadmin'
+        user.is_staff = True
         user.set_password(password)
-        if validated_data.get('role') == 'superadmin':
-            user.is_staff = True
         user.save()
         return user
 
@@ -83,3 +78,10 @@ class OrderStatusSerializer(serializers.Serializer):
 
 class OrderToggleSerializer(serializers.Serializer):
     is_active = serializers.BooleanField()
+
+
+# ── Notifications ────────────────────────────────────────────────────────────
+class SuperAdminNotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SuperAdminNotification
+        fields = ['id', 'type', 'title', 'description', 'is_read', 'created_at']

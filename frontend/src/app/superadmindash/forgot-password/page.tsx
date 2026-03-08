@@ -1,6 +1,41 @@
-import React from 'react';
+"use client";
+
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+
+const API_BASE = 'http://127.0.0.1:8000/api/auth';
 
 export default function SuperAdminForgotPasswordPage() {
+    const [email, setEmail] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
+    const router = useRouter();
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        setLoading(true);
+
+        try {
+            const res = await fetch(`${API_BASE}/send-otp/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, purpose: 'reset' }),
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                router.push(`/superadmindash/verify-otp?email=${encodeURIComponent(email)}`);
+            } else {
+                setError(data.error || data.email?.[0] || 'Failed to send OTP.');
+            }
+        } catch {
+            setError('Network error. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <div className="flex min-h-screen flex-col items-center justify-start bg-white px-4 py-8 sm:px-6 sm:pt-12">
             {/* Logo */}
@@ -18,15 +53,18 @@ export default function SuperAdminForgotPasswordPage() {
                     <p className="mt-2 text-[16px] text-gray-800">OTP will be sent to your Super Admin email</p>
                 </div>
 
-                <form className="w-full space-y-5">
+                {error && <p className="text-sm text-red-500 text-center mb-4">{error}</p>}
+
+                <form className="w-full space-y-5" onSubmit={handleSubmit}>
                     <div className="group relative flex items-center rounded-lg border border-gray-300 bg-white px-0 py-2.5 transition-all focus-within:border-primary hover:border-gray-400">
                         <div className="flex min-w-[110px] justify-center border-r border-gray-200 py-0">
                             <span className="text-base font-normal text-gray-400">Email</span>
                         </div>
                         <input
                             type="email"
-                            name="email"
-                            id="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
                             className="flex-1 border-none bg-transparent px-5 text-base text-gray-900 placeholder-gray-300 outline-none focus:ring-0"
                             placeholder="Enter your email address"
                         />
@@ -35,9 +73,10 @@ export default function SuperAdminForgotPasswordPage() {
                     <div>
                         <button
                             type="submit"
-                            className="mt-6 w-full rounded-lg bg-primary py-3 text-[17px] font-semibold text-white shadow-sm hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors duration-200"
+                            disabled={loading}
+                            className="mt-6 w-full rounded-lg bg-primary py-3 text-[17px] font-semibold text-white shadow-sm hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors duration-200 disabled:opacity-60"
                         >
-                            Send OTP
+                            {loading ? "Sending..." : "Send OTP"}
                         </button>
                     </div>
                 </form>

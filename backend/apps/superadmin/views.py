@@ -6,11 +6,12 @@ from rest_framework.response import Response
 
 from apps.accounts.models import User
 from apps.accounts.permissions import IsSuperAdmin
-from .models import Order
+from .models import Order, SuperAdminNotification
 from .serializers import (
     UserListSerializer, UserToggleSerializer,
     AdministratorSerializer, CreateAdministratorSerializer,
     OrderListSerializer, OrderDetailSerializer, OrderStatusSerializer, OrderToggleSerializer,
+    SuperAdminNotificationSerializer,
 )
 
 
@@ -192,3 +193,26 @@ class OrderDeleteView(APIView):
 
         order.delete()
         return Response({'message': 'Order deleted.'}, status=status.HTTP_204_NO_CONTENT)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# NOTIFICATIONS
+# ══════════════════════════════════════════════════════════════════════════════
+class NotificationListView(generics.ListAPIView):
+    permission_classes = [IsSuperAdmin]
+    serializer_class = SuperAdminNotificationSerializer
+    queryset = SuperAdminNotification.objects.all()
+
+
+class NotificationReadView(APIView):
+    permission_classes = [IsSuperAdmin]
+
+    def patch(self, request, pk):
+        try:
+            notif = SuperAdminNotification.objects.get(pk=pk)
+        except SuperAdminNotification.DoesNotExist:
+            return Response({'error': 'Notification not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        notif.is_read = True
+        notif.save()
+        return Response({'message': 'Notification marked as read.'})

@@ -2,17 +2,43 @@
 
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import { useRouter } from "next/navigation";
+
+const API_BASE = 'http://127.0.0.1:8000/api/auth';
 
 export default function SuperAdminLoginPage() {
     const [showPassword, setShowPassword] = useState(false);
-    const router = useRouter();
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Frontend-only auth placeholder — replace with real API call when backend is ready
-        sessionStorage.setItem("superadmin_authenticated", "true");
-        router.push("/superadmin/overview");
+        setError("");
+        setLoading(true);
+
+        try {
+            const res = await fetch(`${API_BASE}/superadmin-login/`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password }),
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                localStorage.setItem("access_token", data.tokens.access);
+                localStorage.setItem("refresh_token", data.tokens.refresh);
+                localStorage.setItem("user", JSON.stringify(data.user));
+                window.location.href = "/superadmin/overview";
+            } else {
+                const msg = data.error || data.non_field_errors?.[0] || data.detail || "Login failed.";
+                setError(msg);
+            }
+        } catch {
+            setError("Network error. Please try again.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -62,6 +88,8 @@ export default function SuperAdminLoginPage() {
                         </p>
                     </div>
 
+                    {error && <p className="text-sm text-red-500 text-center">{error}</p>}
+
                     <form className="w-full space-y-5" onSubmit={handleSubmit}>
                         {/* Email Input */}
                         <div className="group relative flex items-center rounded-lg border border-gray-300 bg-white px-0 py-2.5 transition-all focus-within:border-primary hover:border-gray-400">
@@ -70,8 +98,8 @@ export default function SuperAdminLoginPage() {
                             </div>
                             <input
                                 type="email"
-                                name="email"
-                                id="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                                 required
                                 className="flex-1 border-none bg-transparent px-5 text-base text-gray-900 placeholder-gray-300 outline-none focus:ring-0"
                                 placeholder="Enter your email address"
@@ -86,8 +114,8 @@ export default function SuperAdminLoginPage() {
                             <div className="relative flex flex-1 items-center">
                                 <input
                                     type={showPassword ? "text" : "password"}
-                                    name="password"
-                                    id="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
                                     required
                                     className="flex-1 border-none bg-transparent px-5 text-base text-gray-900 placeholder-gray-300 outline-none focus:ring-0"
                                     placeholder="Enter your password"
@@ -128,9 +156,10 @@ export default function SuperAdminLoginPage() {
                         <div>
                             <button
                                 type="submit"
-                                className="mt-5 w-full rounded-lg bg-primary py-3 text-[17px] font-semibold text-white shadow-sm hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors duration-200"
+                                disabled={loading}
+                                className="mt-5 w-full rounded-lg bg-primary py-3 text-[17px] font-semibold text-white shadow-sm hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors duration-200 disabled:opacity-60"
                             >
-                                Login to Super Admin
+                                {loading ? "Logging in..." : "Login to Super Admin"}
                             </button>
                         </div>
                     </form>

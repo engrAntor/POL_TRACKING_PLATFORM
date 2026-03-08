@@ -1,110 +1,94 @@
 "use client";
 
-import { Mail, Clock, Check } from "lucide-react";
+import { useState, useEffect, useCallback } from 'react';
+import { AlertTriangle, Clock } from "lucide-react";
+
+const API_BASE = 'http://127.0.0.1:8000/api/dashboard';
 
 interface Notification {
     id: number;
     title: string;
-    timestamp: string;
-    recipient: string;
     message: string;
-    status: 'Sent';
+    status: string;
+    created_at: string;
 }
 
-const notifications: Notification[] = [
-    {
-        id: 1,
-        title: "EXPIRY ALERT: High-Grade Diesel",
-        timestamp: "14/02/2026, 16:36:32",
-        recipient: "operations-manager@customer.com",
-        message: "Automated notice: Your stock of High-Grade Diesel expires in -270 days (2025-05-20). Please plan for replenishment.",
-        status: "Sent"
-    },
-    {
-        id: 2,
-        title: "EXPIRY ALERT: High-Grade Diesel",
-        timestamp: "14/02/2026, 16:36:32",
-        recipient: "operations-manager@customer.com",
-        message: "Automated notice: Your stock of High-Grade Diesel expires in -270 days (2025-05-20). Please plan for replenishment.",
-        status: "Sent"
-    },
-    {
-        id: 3,
-        title: "EXPIRY ALERT: High-Grade Diesel",
-        timestamp: "14/02/2026, 16:36:32",
-        recipient: "operations-manager@customer.com",
-        message: "Automated notice: Your stock of High-Grade Diesel expires in -270 days (2025-05-20). Please plan for replenishment.",
-        status: "Sent"
-    },
-    {
-        id: 4,
-        title: "EXPIRY ALERT: High-Grade Diesel",
-        timestamp: "14/02/2026, 16:36:32",
-        recipient: "operations-manager@customer.com",
-        message: "Automated notice: Your stock of High-Grade Diesel expires in -270 days (2025-05-20). Please plan for replenishment.",
-        status: "Sent"
-    },
-];
-
 export default function NotificationsPage() {
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    const getToken = () => localStorage.getItem('access_token');
+
+    const fetchNotifications = useCallback(async () => {
+        try {
+            const res = await fetch(`${API_BASE}/notifications/`, {
+                headers: { Authorization: `Bearer ${getToken()}` },
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setNotifications(Array.isArray(data) ? data : data.results || []);
+            }
+        } catch {
+            console.error('Failed to fetch notifications');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        const runExpiryCheckAndFetch = async () => {
+            try {
+                await fetch(`${API_BASE}/notifications/trigger-expiry/`, {
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${getToken()}` },
+                });
+            } catch {
+                // silent — alerts may already exist
+            }
+            fetchNotifications();
+        };
+        runExpiryCheckAndFetch();
+    }, [fetchNotifications]);
+
+    const formatTimestamp = (iso: string) => {
+        const d = new Date(iso);
+        return d.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    };
+
     return (
         <div className="space-y-8">
-            {/* Header */}
             <div>
                 <h1 className="text-2xl font-bold text-gray-900">Communication Logs</h1>
-                <p className="mt-2 text-sm text-gray-500">
-                    View automated AI notifications sent to customers regarding usage and expiry.
-                </p>
+                <p className="mt-2 text-sm text-gray-500">View automated AI notifications regarding usage and expiry.</p>
             </div>
 
-            {/* Notifications List */}
-            <div className="space-y-4">
-                {notifications.map((notification) => (
-                    <div
-                        key={notification.id}
-                        className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden"
-                    >
-                        {/* Top Section */}
-                        <div className="flex flex-wrap items-center justify-between gap-3 p-4">
-                            <div className="flex items-center gap-4">
-                                {/* Icon */}
-                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50 text-primary">
-                                    <Mail className="h-5 w-5" />
+            {loading ? (
+                <div className="p-8 text-center text-gray-500">Loading notifications...</div>
+            ) : notifications.length === 0 ? (
+                <div className="p-8 text-center text-gray-500">No notifications yet.</div>
+            ) : (
+                <div className="space-y-4">
+                    {notifications.map((notification) => (
+                        <div key={notification.id} className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                            <div className="flex items-center gap-4 p-4">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-50 text-red-500">
+                                    <AlertTriangle className="h-5 w-5" />
                                 </div>
-
-                                {/* Title & Timestamp */}
                                 <div>
-                                    <h3 className="text-base font-semibold text-gray-900">
-                                        {notification.title}
-                                    </h3>
+                                    <h3 className="text-base font-semibold text-gray-900">{notification.title}</h3>
                                     <div className="mt-1 flex items-center gap-2 text-xs text-gray-400">
                                         <Clock className="h-3.5 w-3.5" />
-                                        <span>{notification.timestamp}</span>
+                                        <span>{formatTimestamp(notification.created_at)}</span>
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Status Badge */}
-                            <div className="flex items-center gap-1.5 rounded-full bg-[#65a30d] px-3 py-1 text-xs font-medium text-white">
-                                <Check className="h-3 w-3" />
-                                <span>{notification.status}</span>
+                            <div className="bg-gray-50 px-4 py-3 border-t border-gray-100">
+                                <p className="text-sm font-medium text-gray-900">{notification.message}</p>
                             </div>
                         </div>
-
-                        {/* Bottom Content Section */}
-                        <div className="bg-gray-50 px-4 py-3 border-t border-gray-100">
-                            <div className="space-y-1">
-                                <p className="text-xs text-gray-400">
-                                    Recipient: {notification.recipient}
-                                </p>
-                                <p className="text-sm font-medium text-gray-900">
-                                    {notification.message}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

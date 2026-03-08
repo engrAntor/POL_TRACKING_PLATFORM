@@ -7,6 +7,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 
 from .models import User, OTP, EmailVerificationToken
 from .tasks import send_verification_email, send_otp_email
@@ -189,6 +191,66 @@ class SuperAdminLoginView(APIView):
         tokens = RefreshToken.for_user(user)
         return Response({
             'message': 'Super Admin login successful.',
+            'user': UserSerializer(user).data,
+            'tokens': {
+                'access': str(tokens.access_token),
+                'refresh': str(tokens),
+            },
+        })
+
+
+# ── Google Login ─────────────────────────────────────────────────────────────
+class GoogleLoginView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        token = request.data.get('credential')
+        if not token:
+            return Response(
+                {'error': 'Google credential token is required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            idinfo = id_token.verify_oauth2_token(
+                token,
+                google_requests.Request(),
+                settings.GOOGLE_CLIENT_ID,
+            )
+        except ValueError:
+            return Response(
+                {'error': 'Invalid Google token.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        email = idinfo.get('email')
+        first_name = idinfo.get('given_name', '')
+        last_name = idinfo.get('family_name', '')
+
+        # Get or create user
+        user, created = User.objects.get_or_create(
+            email=email,
+            defaults={
+                'first_name': first_name,
+                'last_name': last_name,
+                'role': 'admin',
+                'is_email_verified': True,
+            },
+        )
+
+        if created:
+            user.set_unusable_password()
+            user.save()
+
+        if user.role != 'admin':
+            return Response(
+                {'error': 'Use the super admin login page.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        tokens = RefreshToken.for_user(user)
+        return Response({
+            'message': 'Google login successful.',
             'user': UserSerializer(user).data,
             'tokens': {
                 'access': str(tokens.access_token),

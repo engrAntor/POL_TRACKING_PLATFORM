@@ -1,304 +1,243 @@
 "use client";
 
-import { useState } from "react";
-import { Pencil, Trash2, Plus, X, ChevronDown } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Pencil, Trash2, Plus, X } from "lucide-react";
 
-const allAdmins = [
-    { id: "#1233", name: "Devon Lane",    email: "bockely@att.com",    phone: "(201) 555-0124", access: "Admin"       },
-    { id: "#1233", name: "Foysal Rahman", email: "csilvers@rizon.com", phone: "(219) 555-0114", access: "Admin"       },
-    { id: "#1233", name: "Hari Danang",   email: "qamaho@mail.com",    phone: "(316) 555-0116", access: "Admin"       },
-    { id: "#1233", name: "Floyd Miles",   email: "xterris@gmail.com",  phone: "(907) 555-0101", access: "Admin"       },
-    { id: "#1233", name: "Eleanor Pena",  email: "xterris@gmail.com",  phone: "(505) 555-0125", access: "Admin"       },
-    { id: "#1233", name: "Devon Lane",    email: "xterris@gmail.com",  phone: "(704) 555-0127", access: "Super Admin" },
-    { id: "#1233", name: "Hari Danang",   email: "xterris@gmail.com",  phone: "(219) 555-0114", access: "Admin"       },
-    { id: "#1233", name: "Devon Lane",    email: "xterris@gmail.com",  phone: "(270) 555-0117", access: "Admin"       },
-    { id: "#1233", name: "Hari Danang",   email: "xterris@gmail.com",  phone: "(207) 555-0119", access: "Admin"       },
-];
+const API_BASE = 'http://127.0.0.1:8000/api/superadmin';
 
-type Admin = typeof allAdmins[0];
-const PAGE_SIZE = 10;
-
-// ── Reusable role dropdown ────────────────────────────────────────────────────
-function RoleDropdown({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-    const [open, setOpen] = useState(false);
-    return (
-        <div className="relative flex-1">
-            <button
-                type="button"
-                onClick={() => setOpen(!open)}
-                className="w-full flex items-center justify-between border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 bg-white"
-            >
-                {value}
-                <ChevronDown className="w-4 h-4 text-gray-500" />
-            </button>
-            {open && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden">
-                    {["Admin", "Super Admin"].map((r) => (
-                        <button
-                            key={r}
-                            type="button"
-                            onClick={() => { onChange(r); setOpen(false); }}
-                            className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 ${r === value ? "text-[#0E3B1F] font-semibold" : "text-gray-700"}`}
-                        >
-                            {r}
-                        </button>
-                    ))}
-                </div>
-            )}
-        </div>
-    );
+interface Admin {
+    id: number;
+    first_name: string;
+    last_name: string;
+    full_name: string;
+    email: string;
+    phone: string;
+    company: string;
+    job_title: string;
+    role: string;
+    is_active: boolean;
 }
 
-// ── Main page ─────────────────────────────────────────────────────────────────
+const PAGE_SIZE = 10;
+
 export default function AdministratorsPage() {
-    const [page, setPage]           = useState(1);
-
-    // Create modal
+    const [admins, setAdmins] = useState<Admin[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(1);
     const [showCreate, setShowCreate] = useState(false);
-    const [createRole, setCreateRole] = useState("Super Admin");
-
-    // Edit modal
     const [editTarget, setEditTarget] = useState<Admin | null>(null);
-    const [editRole, setEditRole]     = useState("Admin");
-
-    // Delete modal
     const [deleteTarget, setDeleteTarget] = useState<Admin | null>(null);
 
-    const totalPages = Math.ceil(allAdmins.length / PAGE_SIZE);
-    const admins     = allAdmins.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+    // Create form
+    const [createForm, setCreateForm] = useState({ first_name: '', last_name: '', email: '', password: 'Admin@123', phone: '', company: '', job_title: '' });
+    // Edit form
+    const [editForm, setEditForm] = useState({ first_name: '', last_name: '', email: '', phone: '', company: '', job_title: '' });
 
-    function openEdit(admin: Admin) {
+    const getToken = () => localStorage.getItem('access_token');
+
+    const fetchAdmins = useCallback(async () => {
+        try {
+            const res = await fetch(`${API_BASE}/administrators/`, { headers: { Authorization: `Bearer ${getToken()}` } });
+            if (res.ok) {
+                const data = await res.json();
+                setAdmins(Array.isArray(data) ? data : data.results || []);
+            }
+        } catch { console.error('Failed to fetch admins'); }
+        finally { setLoading(false); }
+    }, []);
+
+    useEffect(() => { fetchAdmins(); }, [fetchAdmins]);
+
+    const totalPages = Math.max(1, Math.ceil(admins.length / PAGE_SIZE));
+    const paged = admins.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+    const handleCreate = async () => {
+        try {
+            const res = await fetch(`${API_BASE}/administrators/create/`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(createForm),
+            });
+            if (res.ok) {
+                setShowCreate(false);
+                setCreateForm({ first_name: '', last_name: '', email: '', password: 'Admin@123', phone: '', company: '', job_title: '' });
+                fetchAdmins();
+            }
+        } catch { console.error('Failed to create admin'); }
+    };
+
+    const openEdit = (admin: Admin) => {
         setEditTarget(admin);
-        setEditRole(admin.access);
-    }
+        setEditForm({ first_name: admin.first_name, last_name: admin.last_name, email: admin.email, phone: admin.phone || '', company: admin.company || '', job_title: admin.job_title || '' });
+    };
+
+    const handleUpdate = async () => {
+        if (!editTarget) return;
+        try {
+            const res = await fetch(`${API_BASE}/administrators/${editTarget.id}/update/`, {
+                method: 'PATCH',
+                headers: { Authorization: `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(editForm),
+            });
+            if (res.ok) { setEditTarget(null); fetchAdmins(); }
+        } catch { console.error('Failed to update admin'); }
+    };
+
+    const handleDelete = async () => {
+        if (!deleteTarget) return;
+        try {
+            await fetch(`${API_BASE}/administrators/${deleteTarget.id}/delete/`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${getToken()}` },
+            });
+            setDeleteTarget(null);
+            fetchAdmins();
+        } catch { console.error('Failed to delete admin'); }
+    };
+
+    const roleLabel = (r: string) => r === 'superadmin' ? 'Super Admin' : 'Admin';
+
+    if (loading) return <div className="p-8 text-center text-gray-500">Loading administrators...</div>;
 
     return (
         <div className="space-y-5">
-
-            {/* Create button */}
             <div>
-                <button
-                    onClick={() => setShowCreate(true)}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-white hover:opacity-90 transition-colors"
-                    style={{ background: "#0E3B1F" }}
-                >
-                    <Plus className="w-4 h-4" />
-                    New Administrators Profile Create
+                <button onClick={() => setShowCreate(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-white hover:opacity-90" style={{ background: "#0E3B1F" }}>
+                    <Plus className="w-4 h-4" /> New Administrators Profile Create
                 </button>
             </div>
 
-            {/* Table */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="overflow-x-auto">
-                <table className="w-full text-sm min-w-[620px]">
-                    <thead>
-                        <tr className="border-b border-gray-100">
-                            <th className="text-left px-8 py-5 text-gray-500 font-medium">SL no.</th>
-                            <th className="text-left px-6 py-5 text-gray-500 font-medium">Full Name</th>
-                            <th className="text-left px-6 py-5 text-gray-500 font-medium">Email</th>
-                            <th className="text-left px-6 py-5 text-gray-500 font-medium">Contact Number</th>
-                            <th className="text-left px-6 py-5 text-gray-500 font-medium">Has Access to</th>
-                            <th className="text-right px-8 py-5 text-gray-500 font-medium">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {admins.map((admin, i) => (
-                            <tr key={i} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                                <td className="px-8 py-4 text-gray-700">{admin.id}</td>
-                                <td className="px-6 py-4 text-gray-800 font-medium">{admin.name}</td>
-                                <td className="px-6 py-4 text-gray-600">{admin.email}</td>
-                                <td className="px-6 py-4 text-gray-600">{admin.phone}</td>
-                                <td className="px-6 py-4 text-gray-700">{admin.access}</td>
-                                <td className="px-8 py-4">
-                                    <div className="flex items-center justify-end gap-2">
-                                        <button
-                                            onClick={() => openEdit(admin)}
-                                            className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-90 transition-colors"
-                                            style={{ background: "#0E3B1F" }}
-                                            title="Edit"
-                                        >
-                                            <Pencil className="w-3.5 h-3.5 text-white" />
-                                        </button>
-                                        <button
-                                            onClick={() => setDeleteTarget(admin)}
-                                            className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center hover:bg-red-700 transition-colors"
-                                            title="Delete"
-                                        >
-                                            <Trash2 className="w-3.5 h-3.5 text-white" />
-                                        </button>
-                                    </div>
-                                </td>
+                    <table className="w-full text-sm min-w-[620px]">
+                        <thead>
+                            <tr className="border-b border-gray-100">
+                                <th className="text-left px-8 py-5 text-gray-500 font-medium">SL no.</th>
+                                <th className="text-left px-6 py-5 text-gray-500 font-medium">Full Name</th>
+                                <th className="text-left px-6 py-5 text-gray-500 font-medium">Email</th>
+                                <th className="text-left px-6 py-5 text-gray-500 font-medium">Contact Number</th>
+                                <th className="text-left px-6 py-5 text-gray-500 font-medium">Has Access to</th>
+                                <th className="text-right px-8 py-5 text-gray-500 font-medium">Action</th>
                             </tr>
+                        </thead>
+                        <tbody>
+                            {paged.length === 0 ? (
+                                <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-400">No administrators found</td></tr>
+                            ) : paged.map((admin, i) => (
+                                <tr key={admin.id} className="border-b border-gray-50 hover:bg-gray-50/50">
+                                    <td className="px-8 py-4 text-gray-700">#{(page - 1) * PAGE_SIZE + i + 1}</td>
+                                    <td className="px-6 py-4 text-gray-800 font-medium">{admin.full_name}</td>
+                                    <td className="px-6 py-4 text-gray-600">{admin.email}</td>
+                                    <td className="px-6 py-4 text-gray-600">{admin.phone || '-'}</td>
+                                    <td className="px-6 py-4 text-gray-700">{roleLabel(admin.role)}</td>
+                                    <td className="px-8 py-4">
+                                        <div className="flex items-center justify-end gap-2">
+                                            <button onClick={() => openEdit(admin)} className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-90" style={{ background: "#0E3B1F" }} title="Edit">
+                                                <Pencil className="w-3.5 h-3.5 text-white" />
+                                            </button>
+                                            <button onClick={() => setDeleteTarget(admin)} className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center hover:bg-red-700" title="Delete">
+                                                <Trash2 className="w-3.5 h-3.5 text-white" />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+                {totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-2 py-6">
+                        <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-40" style={{ background: "#0E3B1F" }}>&lt; Prev</button>
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
+                            <button key={n} onClick={() => setPage(n)} className="w-9 h-9 rounded-lg text-sm font-semibold text-white" style={{ background: "#0E3B1F", opacity: n === page ? 1 : 0.55 }}>{n}</button>
                         ))}
-                    </tbody>
-                </table>
-                </div>
-
-                {/* Pagination */}
-                <div className="flex items-center justify-center gap-2 py-6">
-                    <button
-                        onClick={() => setPage((p) => Math.max(1, p - 1))}
-                        disabled={page === 1}
-                        className="px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-40"
-                        style={{ background: "#0E3B1F" }}
-                    >
-                        &lt; Prev
-                    </button>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-                        <button
-                            key={n}
-                            onClick={() => setPage(n)}
-                            className="w-9 h-9 rounded-lg text-sm font-semibold text-white"
-                            style={{ background: "#0E3B1F", opacity: n === page ? 1 : 0.55 }}
-                        >
-                            {n}
-                        </button>
-                    ))}
-                    <button
-                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                        disabled={page === totalPages}
-                        className="px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-40"
-                        style={{ background: "#0E3B1F" }}
-                    >
-                        Next &gt;
-                    </button>
-                </div>
+                        <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-40" style={{ background: "#0E3B1F" }}>Next &gt;</button>
+                    </div>
+                )}
             </div>
 
-            {/* ── Create Modal ──────────────────────────────────────────── */}
+            {/* Create Modal */}
             {showCreate && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-                    onClick={() => setShowCreate(false)}>
-                    <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-[400px] mx-4 px-8 py-8"
-                        onClick={(e) => e.stopPropagation()}>
-                        <button onClick={() => setShowCreate(false)}
-                            className="absolute top-4 right-4 w-7 h-7 rounded-full bg-gray-800 flex items-center justify-center hover:bg-gray-900 transition-colors">
-                            <X className="w-4 h-4 text-white" />
-                        </button>
-                        <h2 className="text-center text-lg font-bold text-[#2d1b6b] mb-8">
-                            New Administrator Profile Create
-                        </h2>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowCreate(false)}>
+                    <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-[400px] mx-4 px-8 py-8" onClick={(e) => e.stopPropagation()}>
+                        <button onClick={() => setShowCreate(false)} className="absolute top-4 right-4 w-7 h-7 rounded-full bg-gray-800 flex items-center justify-center hover:bg-gray-900"><X className="w-4 h-4 text-white" /></button>
+                        <h2 className="text-center text-lg font-bold text-[#2d1b6b] mb-8">New Administrator Profile Create</h2>
                         <div className="space-y-5">
                             {[
-                                { label: "First Name", type: "text"     },
-                                { label: "Last Name",  type: "text"     },
-                                { label: "Email",      type: "email"    },
-                                { label: "Password",   type: "password" },
-                                { label: "Phone",      type: "tel"      },
-                                { label: "Company",    type: "text"     },
-                                { label: "Job Title",  type: "text"     },
-                            ].map(({ label, type }) => (
-                                <div key={label} className="flex items-center gap-4">
+                                { label: "First Name", key: "first_name", type: "text" },
+                                { label: "Last Name", key: "last_name", type: "text" },
+                                { label: "Email", key: "email", type: "email" },
+                                { label: "Password", key: "password", type: "password" },
+                                { label: "Phone", key: "phone", type: "tel" },
+                                { label: "Company", key: "company", type: "text" },
+                                { label: "Job Title", key: "job_title", type: "text" },
+                            ].map(({ label, key, type }) => (
+                                <div key={key} className="flex items-center gap-4">
                                     <label className="w-20 text-sm font-medium text-gray-700 shrink-0">{label}</label>
-                                    <input type={type} placeholder={label}
+                                    <input type={type} placeholder={label} value={(createForm as Record<string, string>)[key]}
+                                        onChange={(e) => setCreateForm(prev => ({ ...prev, [key]: e.target.value }))}
                                         className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
                                 </div>
                             ))}
                             <div className="flex items-center gap-4">
-                                <label className="w-16 text-sm font-medium text-gray-700 shrink-0">Role</label>
-                                <RoleDropdown value={createRole} onChange={setCreateRole} />
+                                <label className="w-20 text-sm font-medium text-gray-700 shrink-0">Role</label>
+                                <div className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-500 bg-gray-100">Super Admin</div>
                             </div>
                         </div>
                         <div className="flex gap-3 mt-8">
-                            <button onClick={() => setShowCreate(false)}
-                                className="flex-1 py-2.5 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                                Cancel
-                            </button>
-                            <button className="flex-1 py-2.5 rounded-lg text-sm font-medium text-white hover:opacity-90 transition-colors"
-                                style={{ background: "#0E3B1F" }}>
-                                Create
-                            </button>
+                            <button onClick={() => setShowCreate(false)} className="flex-1 py-2.5 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+                            <button onClick={handleCreate} className="flex-1 py-2.5 rounded-lg text-sm font-medium text-white hover:opacity-90" style={{ background: "#0E3B1F" }}>Create</button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* ── Edit Modal ────────────────────────────────────────────── */}
+            {/* Edit Modal */}
             {editTarget && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-                    onClick={() => setEditTarget(null)}>
-                    <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-[400px] mx-4 px-8 py-8"
-                        onClick={(e) => e.stopPropagation()}>
-                        <button onClick={() => setEditTarget(null)}
-                            className="absolute top-4 right-4 w-7 h-7 rounded-full bg-gray-800 flex items-center justify-center hover:bg-gray-900 transition-colors">
-                            <X className="w-4 h-4 text-white" />
-                        </button>
-                        <h2 className="text-center text-lg font-bold text-[#2d1b6b] mb-8">
-                            Edit Administrator
-                        </h2>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setEditTarget(null)}>
+                    <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-[400px] mx-4 px-8 py-8" onClick={(e) => e.stopPropagation()}>
+                        <button onClick={() => setEditTarget(null)} className="absolute top-4 right-4 w-7 h-7 rounded-full bg-gray-800 flex items-center justify-center hover:bg-gray-900"><X className="w-4 h-4 text-white" /></button>
+                        <h2 className="text-center text-lg font-bold text-[#2d1b6b] mb-8">Edit Administrator</h2>
                         <div className="space-y-5">
+                            {[
+                                { label: "First Name", key: "first_name" },
+                                { label: "Last Name", key: "last_name" },
+                                { label: "Email", key: "email" },
+                                { label: "Phone", key: "phone" },
+                                { label: "Company", key: "company" },
+                                { label: "Job Title", key: "job_title" },
+                            ].map(({ label, key }) => (
+                                <div key={key} className="flex items-center gap-4">
+                                    <label className="w-20 text-sm font-medium text-gray-700 shrink-0">{label}</label>
+                                    <input type="text" value={(editForm as Record<string, string>)[key]}
+                                        onChange={(e) => setEditForm(prev => ({ ...prev, [key]: e.target.value }))}
+                                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                                </div>
+                            ))}
                             <div className="flex items-center gap-4">
-                                <label className="w-16 text-sm font-medium text-gray-700 shrink-0">Name</label>
-                                <input type="text" defaultValue={editTarget.name}
-                                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <label className="w-16 text-sm font-medium text-gray-700 shrink-0">Email</label>
-                                <input type="email" defaultValue={editTarget.email}
-                                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <label className="w-16 text-sm font-medium text-gray-700 shrink-0">Phone</label>
-                                <input type="tel" defaultValue={editTarget.phone}
-                                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <label className="w-16 text-sm font-medium text-gray-700 shrink-0">Password</label>
-                                <input type="password" placeholder="New password (optional)"
-                                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <label className="w-16 text-sm font-medium text-gray-700 shrink-0">Company</label>
-                                <input type="text"
-                                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <label className="w-16 text-sm font-medium text-gray-700 shrink-0">Job Title</label>
-                                <input type="text"
-                                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <label className="w-16 text-sm font-medium text-gray-700 shrink-0">Role</label>
-                                <RoleDropdown value={editRole} onChange={setEditRole} />
+                                <label className="w-20 text-sm font-medium text-gray-700 shrink-0">Role</label>
+                                <div className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-500 bg-gray-100">{roleLabel(editTarget.role)}</div>
                             </div>
                         </div>
                         <div className="flex gap-3 mt-8">
-                            <button onClick={() => setEditTarget(null)}
-                                className="flex-1 py-2.5 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                                Cancel
-                            </button>
-                            <button className="flex-1 py-2.5 rounded-lg text-sm font-medium text-white hover:opacity-90 transition-colors"
-                                style={{ background: "#0E3B1F" }}>
-                                Save
-                            </button>
+                            <button onClick={() => setEditTarget(null)} className="flex-1 py-2.5 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+                            <button onClick={handleUpdate} className="flex-1 py-2.5 rounded-lg text-sm font-medium text-white hover:opacity-90" style={{ background: "#0E3B1F" }}>Save</button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* ── Delete Confirm Modal ──────────────────────────────────── */}
+            {/* Delete Confirm Modal */}
             {deleteTarget && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-                    onClick={() => setDeleteTarget(null)}>
-                    <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-[360px] mx-4 px-8 py-8"
-                        onClick={(e) => e.stopPropagation()}>
-                        <button onClick={() => setDeleteTarget(null)}
-                            className="absolute top-4 right-4 w-7 h-7 rounded-full bg-gray-800 flex items-center justify-center hover:bg-gray-900 transition-colors">
-                            <X className="w-4 h-4 text-white" />
-                        </button>
-                        <h2 className="text-center text-lg font-bold text-[#2d1b6b] mb-8">
-                            Confirm Deletion
-                        </h2>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setDeleteTarget(null)}>
+                    <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-[360px] mx-4 px-8 py-8" onClick={(e) => e.stopPropagation()}>
+                        <button onClick={() => setDeleteTarget(null)} className="absolute top-4 right-4 w-7 h-7 rounded-full bg-gray-800 flex items-center justify-center hover:bg-gray-900"><X className="w-4 h-4 text-white" /></button>
+                        <h2 className="text-center text-lg font-bold text-[#2d1b6b] mb-4">Confirm Deletion</h2>
+                        <p className="text-center text-sm text-gray-500 mb-6">Delete administrator <strong>{deleteTarget.full_name}</strong>?</p>
                         <div className="flex gap-3">
-                            <button onClick={() => setDeleteTarget(null)}
-                                className="flex-1 py-2.5 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                                Cancel
-                            </button>
-                            <button
-                                className="flex-1 py-2.5 rounded-lg text-sm font-medium text-white hover:opacity-90 transition-colors flex items-center justify-center gap-2"
-                                style={{ background: "#0E3B1F" }}>
-                                <Trash2 className="w-4 h-4" />
-                                Delete Account
+                            <button onClick={() => setDeleteTarget(null)} className="flex-1 py-2.5 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+                            <button onClick={handleDelete} className="flex-1 py-2.5 rounded-lg text-sm font-medium text-white hover:opacity-90 flex items-center justify-center gap-2" style={{ background: "#0E3B1F" }}>
+                                <Trash2 className="w-4 h-4" /> Delete Account
                             </button>
                         </div>
                     </div>

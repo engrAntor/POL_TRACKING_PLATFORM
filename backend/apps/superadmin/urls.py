@@ -23,4 +23,8 @@ urlpatterns = [
     path('orders/<int:pk>/toggle/', views.OrderToggleView.as_view(), name='sa-order-toggle'),
     path('orders/<int:pk>/delete/', views.OrderDeleteView.as_view(), name='sa-order-delete'),
 
+    # Notifications
+    path('notifications/', views.NotificationListView.as_view(), name='sa-notifications'),
+    path('notifications/<int:pk>/read/', views.NotificationReadView.as_view(), name='sa-notification-read'),
+
 ]

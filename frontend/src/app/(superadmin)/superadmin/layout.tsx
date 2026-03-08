@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -15,7 +15,6 @@ import {
     Eye,
     EyeOff,
     X,
-    ChevronDown,
     Menu,
 } from 'lucide-react';
 
@@ -27,45 +26,16 @@ const menuItems = [
     { name: 'User Issues',     href: '/superadmin/issues',          icon: AlertTriangle   },
 ];
 
-// ── Role dropdown ─────────────────────────────────────────────────────────────
-function RoleDropdown({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-    const [open, setOpen] = useState(false);
-    return (
-        <div className="relative flex-1">
-            <button
-                type="button"
-                onClick={() => setOpen(!open)}
-                className="w-full flex items-center justify-between border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 bg-white"
-            >
-                {value}
-                <ChevronDown className="w-4 h-4 text-gray-500" />
-            </button>
-            {open && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden">
-                    {["Admin", "Super Admin"].map((r) => (
-                        <button
-                            key={r}
-                            type="button"
-                            onClick={() => { onChange(r); setOpen(false); }}
-                            className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 ${r === value ? "text-[#0E3B1F] font-semibold" : "text-gray-700"}`}
-                        >
-                            {r}
-                        </button>
-                    ))}
-                </div>
-            )}
-        </div>
-    );
-}
-
 // ── Password input with show/hide ─────────────────────────────────────────────
-function PwInput({ label, show, onToggle }: { label: string; show: boolean; onToggle: () => void }) {
+function PwInput({ label, show, onToggle, value, onChange }: { label: string; show: boolean; onToggle: () => void; value: string; onChange: (v: string) => void }) {
     return (
         <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
             <label className="sm:w-36 text-sm font-medium text-gray-700 shrink-0">{label}</label>
             <div className="relative flex-1">
                 <input
                     type={show ? "text" : "password"}
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 pr-9"
                 />
                 <button
@@ -79,6 +49,14 @@ function PwInput({ label, show, onToggle }: { label: string; show: boolean; onTo
         </div>
     );
 }
+
+const API_AUTH = 'http://127.0.0.1:8000/api/auth';
+const API_BASE = 'http://127.0.0.1:8000';
+const avatarUrl = (url?: string | null) => {
+    if (!url) return '/assets/images/my_dp.png';
+    if (url.startsWith('http')) return url;
+    return `${API_BASE}${url}`;
+};
 
 export default function SuperAdminLayout({ children }: { children: React.ReactNode }) {
     const router   = useRouter();
@@ -98,20 +76,183 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
     const [showAccount,  setShowAccount]  = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
-    // Account modal state
-    const [accountRole, setAccountRole] = useState("Super Admin");
+    // Profile data
+    const [profileData, setProfileData] = useState({ first_name: '', last_name: '', email: '', phone: '', company: '', job_title: '', avatar: '' });
+    const [profileName, setProfileName] = useState('');
+    const [profileEmail, setProfileEmail] = useState('');
+    const [profilePhone, setProfilePhone] = useState('');
+    const [profileCompany, setProfileCompany] = useState('');
+    const [profileJobTitle, setProfileJobTitle] = useState('');
+    const [profileSaving, setProfileSaving] = useState(false);
+    const [profileMsg, setProfileMsg] = useState('');
+
+    // Avatar upload
+    const [avatarFile, setAvatarFile] = useState<File | null>(null);
+    const [avatarPreview, setAvatarPreview] = useState('');
+
+    // Password fields
+    const [oldPw, setOldPw] = useState('');
+    const [newPw, setNewPw] = useState('');
+    const [confirmPw, setConfirmPw] = useState('');
+    const [pwSaving, setPwSaving] = useState(false);
+    const [pwMsg, setPwMsg] = useState('');
 
     // Password show/hide
     const [showOldPw,     setShowOldPw]     = useState(false);
     const [showNewPw,     setShowNewPw]     = useState(false);
     const [showConfirmPw, setShowConfirmPw] = useState(false);
 
+    // Bell notifications
+    const [bellNotifs, setBellNotifs] = useState<{ id: number; title: string; description: string; created_at: string }[]>([]);
+
+    const fetchBellNotifs = useCallback(async () => {
+        try {
+            const token = localStorage.getItem('access_token');
+            const res = await fetch('http://127.0.0.1:8000/api/superadmin/notifications/', {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const arr = Array.isArray(data) ? data : data.results || [];
+                setBellNotifs(arr.slice(0, 5));
+            }
+        } catch { /* silent */ }
+    }, []);
+
+    useEffect(() => { if (authorized) fetchBellNotifs(); }, [authorized, fetchBellNotifs]);
+
+    const relativeTime = (iso: string) => {
+        const diff = Date.now() - new Date(iso).getTime();
+        const mins = Math.floor(diff / 60000);
+        if (mins < 1) return 'Just now';
+        if (mins < 60) return `${mins} min ago`;
+        const hrs = Math.floor(mins / 60);
+        if (hrs < 24) return `${hrs} hr ago`;
+        return `${Math.floor(hrs / 24)} day ago`;
+    };
+
+    const getToken = () => localStorage.getItem('access_token');
+
+    const fetchProfile = useCallback(async () => {
+        const token = getToken();
+        if (!token) return;
+        try {
+            const res = await fetch(`${API_AUTH}/profile/`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setProfileData(data);
+                setProfileName(`${data.first_name || ''} ${data.last_name || ''}`.trim());
+                setProfileEmail(data.email || '');
+                setProfilePhone(data.phone || '');
+                setProfileCompany(data.company || '');
+                setProfileJobTitle(data.job_title || '');
+            }
+        } catch { /* silent */ }
+    }, []);
+
+    useEffect(() => { if (authorized) fetchProfile(); }, [authorized, fetchProfile]);
+
+    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setAvatarFile(file);
+        setAvatarPreview(URL.createObjectURL(file));
+    };
+
+    const handleSaveProfile = async () => {
+        setProfileSaving(true);
+        setProfileMsg('');
+        const token = getToken();
+        if (!token) { setProfileMsg('Not authenticated.'); setProfileSaving(false); return; }
+        try {
+            const nameParts = profileName.trim().split(/\s+/);
+            const first_name = nameParts[0] || '';
+            const last_name = nameParts.slice(1).join(' ') || '';
+
+            const formData = new FormData();
+            formData.append('first_name', first_name);
+            formData.append('last_name', last_name);
+            formData.append('phone', profilePhone);
+            formData.append('company', profileCompany);
+            formData.append('job_title', profileJobTitle);
+            if (avatarFile) formData.append('avatar', avatarFile);
+
+            const res = await fetch(`${API_AUTH}/profile/`, {
+                method: 'PATCH',
+                headers: { Authorization: `Bearer ${token}` },
+                body: formData,
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setProfileData(data);
+                setAvatarFile(null);
+                setAvatarPreview('');
+                // Update localStorage user
+                const userStr = localStorage.getItem('user');
+                if (userStr) {
+                    const user = JSON.parse(userStr);
+                    localStorage.setItem('user', JSON.stringify({ ...user, first_name: data.first_name, last_name: data.last_name, full_name: data.full_name }));
+                }
+                setProfileMsg('Profile updated!');
+                setTimeout(() => setProfileMsg(''), 2000);
+            } else {
+                const errData = await res.json().catch(() => ({}));
+                setProfileMsg(errData.detail || 'Failed to update.');
+            }
+        } catch {
+            setProfileMsg('Network error.');
+        } finally {
+            setProfileSaving(false);
+        }
+    };
+
+    const handleChangePassword = async () => {
+        setPwSaving(true);
+        setPwMsg('');
+        if (newPw !== confirmPw) { setPwMsg('Passwords do not match.'); setPwSaving(false); return; }
+        if (newPw.length < 8) { setPwMsg('Minimum 8 characters.'); setPwSaving(false); return; }
+        const token = getToken();
+        if (!token) { setPwMsg('Not authenticated.'); setPwSaving(false); return; }
+        try {
+            const res = await fetch(`${API_AUTH}/change-password/`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ old_password: oldPw, new_password: newPw, confirm_new_password: confirmPw }),
+            });
+            if (res.ok) {
+                setPwMsg('Password changed!');
+                setOldPw(''); setNewPw(''); setConfirmPw('');
+                setTimeout(() => { setPwMsg(''); setShowPassword(false); }, 2000);
+            } else {
+                const data = await res.json().catch(() => ({}));
+                const msg = data.error || data.old_password?.[0] || data.new_password?.[0] || data.detail || 'Failed to change password.';
+                setPwMsg(msg);
+            }
+        } catch {
+            setPwMsg('Network error.');
+        } finally {
+            setPwSaving(false);
+        }
+    };
+
     useEffect(() => {
-        const auth = sessionStorage.getItem("superadmin_authenticated");
-        if (!auth) {
+        const token = localStorage.getItem("access_token");
+        const userStr = localStorage.getItem("user");
+        if (!token || !userStr) {
             router.replace("/superadmindash");
-        } else {
+            return;
+        }
+        try {
+            const user = JSON.parse(userStr);
+            if (user.role !== 'superadmin') {
+                router.replace("/superadmindash");
+                return;
+            }
             setAuthorized(true);
+        } catch {
+            router.replace("/superadmindash");
         }
     }, [router]);
 
@@ -130,7 +271,9 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
     }, [showProfile, showNotif]);
 
     const handleLogout = () => {
-        sessionStorage.removeItem("superadmin_authenticated");
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        localStorage.removeItem("user");
         router.replace("/superadmindash");
     };
 
@@ -243,7 +386,9 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
                                 className="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
                             >
                                 <Bell className="w-5 h-5 text-gray-500" />
-                                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
+                                {bellNotifs.length > 0 && (
+                                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
+                                )}
                             </button>
 
                             {showNotif && (
@@ -252,17 +397,17 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
                                         <p className="text-sm font-semibold text-gray-900">Notifications</p>
                                     </div>
                                     <div className="max-h-[280px] overflow-y-auto">
-                                        {[
-                                            { title: "New User Registered", desc: "john.doe@example.com just created an account", time: "5 min ago" },
-                                            { title: "New Order Placed", desc: "Order #1058 — 500L Diesel from Admin Foysal", time: "20 min ago" },
-                                            { title: "Issue Reported", desc: "Admin Devon Lane submitted a support request", time: "1 hr ago" },
-                                        ].map((n, i) => (
-                                            <div key={i} className="px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-50">
-                                                <p className="text-sm font-medium text-gray-800">{n.title}</p>
-                                                <p className="text-xs text-gray-500 mt-0.5">{n.desc}</p>
-                                                <p className="text-[10px] text-gray-400 mt-1">{n.time}</p>
-                                            </div>
-                                        ))}
+                                        {bellNotifs.length === 0 ? (
+                                            <div className="px-4 py-6 text-center text-sm text-gray-400">No notifications</div>
+                                        ) : (
+                                            bellNotifs.map((n) => (
+                                                <div key={n.id} className="px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-50">
+                                                    <p className="text-sm font-medium text-gray-800">{n.title}</p>
+                                                    <p className="text-xs text-gray-500 mt-0.5">{n.description}</p>
+                                                    <p className="text-[10px] text-gray-400 mt-1">{relativeTime(n.created_at)}</p>
+                                                </div>
+                                            ))
+                                        )}
                                     </div>
                                 </div>
                             )}
@@ -275,7 +420,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
                                 className="w-9 h-9 lg:w-10 lg:h-10 rounded-full overflow-hidden shrink-0 border-2 border-white shadow-md ring-1 ring-gray-200 hover:ring-gray-400 transition-all"
                             >
                                 <img
-                                    src="/assets/images/my_dp.png"
+                                    src={avatarUrl(profileData.avatar)}
                                     alt="User Profile"
                                     className="h-full w-full object-cover object-top"
                                 />
@@ -288,12 +433,12 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
                                     <div className="flex flex-col items-center pt-5 pb-3 px-4">
                                         <div className="w-14 h-14 lg:w-16 lg:h-16 rounded-full overflow-hidden border-2 border-white shadow ring-1 ring-gray-200 mb-2">
                                             <img
-                                                src="/assets/images/my_dp.png"
+                                                src={avatarUrl(profileData.avatar)}
                                                 alt="Profile"
                                                 className="h-full w-full object-cover object-top"
                                             />
                                         </div>
-                                        <p className="text-sm font-semibold text-gray-900">Antor Das</p>
+                                        <p className="text-sm font-semibold text-gray-900">{profileData.first_name} {profileData.last_name}</p>
                                         <span
                                             className="mt-1 px-3 py-0.5 rounded-full text-xs font-medium text-white"
                                             style={{ background: '#0E3B1F' }}
@@ -306,7 +451,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
 
                                     {/* Profile row */}
                                     <button
-                                        onClick={() => { setShowProfile(false); setShowAccount(true); }}
+                                        onClick={() => { setShowProfile(false); setShowAccount(true); setAvatarFile(null); setAvatarPreview(''); fetchProfile(); }}
                                         className="flex items-center justify-between w-full px-5 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                                     >
                                         <span>Profile</span>
@@ -369,31 +514,38 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
                                 <label className="sm:w-20 text-sm font-medium text-gray-700 shrink-0">Photo</label>
                                 <div className="flex items-center gap-3 flex-1">
                                     <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-300 shrink-0">
-                                        <img src="/assets/images/my_dp.png" alt="Avatar" className="w-full h-full object-cover object-top" />
+                                        <img src={avatarPreview || avatarUrl(profileData.avatar)} alt="Avatar" className="w-full h-full object-cover object-top" />
                                     </div>
                                     <label className="cursor-pointer px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors">
-                                        Upload
-                                        <input type="file" accept="image/*" className="hidden" />
+                                        {avatarFile ? 'Change' : 'Upload'}
+                                        <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
                                     </label>
+                                    {avatarFile && <span className="text-xs text-green-600">Selected</span>}
                                 </div>
                             </div>
-                            {[
-                                { label: "Name",      type: "text",  placeholder: "Antor Das"         },
-                                { label: "Email",     type: "email", placeholder: "antor@example.com" },
-                                { label: "Phone",     type: "tel",   placeholder: "+880 1700-000000"  },
-                                { label: "Company",   type: "text",  placeholder: "Sparktech Agency"  },
-                                { label: "Job Title", type: "text",  placeholder: "Software Engineer" },
-                            ].map(({ label, type, placeholder }) => (
-                                <div key={label} className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
-                                    <label className="sm:w-20 text-sm font-medium text-gray-700 shrink-0">{label}</label>
-                                    <input
-                                        type={type}
-                                        placeholder={placeholder}
-                                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400"
-                                    />
-                                </div>
-                            ))}
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                                <label className="sm:w-20 text-sm font-medium text-gray-700 shrink-0">Name</label>
+                                <input type="text" value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder="Full name" className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                            </div>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                                <label className="sm:w-20 text-sm font-medium text-gray-700 shrink-0">Email</label>
+                                <input type="email" value={profileEmail} disabled className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none bg-gray-50 text-gray-500 cursor-not-allowed" />
+                            </div>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                                <label className="sm:w-20 text-sm font-medium text-gray-700 shrink-0">Phone</label>
+                                <input type="tel" value={profilePhone} onChange={(e) => setProfilePhone(e.target.value)} placeholder="+880 1700-000000" className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                            </div>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                                <label className="sm:w-20 text-sm font-medium text-gray-700 shrink-0">Company</label>
+                                <input type="text" value={profileCompany} onChange={(e) => setProfileCompany(e.target.value)} placeholder="Company name" className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                            </div>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                                <label className="sm:w-20 text-sm font-medium text-gray-700 shrink-0">Job Title</label>
+                                <input type="text" value={profileJobTitle} onChange={(e) => setProfileJobTitle(e.target.value)} placeholder="Job title" className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                            </div>
                         </div>
+
+                        {profileMsg && <p className={`text-sm text-center mt-4 ${profileMsg.includes('updated') ? 'text-green-600' : 'text-red-500'}`}>{profileMsg}</p>}
 
                         <div className="flex gap-3 mt-8">
                             <button
@@ -403,10 +555,12 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
                                 Cancel
                             </button>
                             <button
-                                className="flex-1 py-2.5 rounded-lg text-sm font-medium text-white hover:opacity-90 transition-colors"
+                                onClick={handleSaveProfile}
+                                disabled={profileSaving}
+                                className="flex-1 py-2.5 rounded-lg text-sm font-medium text-white hover:opacity-90 transition-colors disabled:opacity-50"
                                 style={{ background: '#0E3B1F' }}
                             >
-                                Save
+                                {profileSaving ? 'Saving...' : 'Save'}
                             </button>
                         </div>
                     </div>
@@ -433,23 +587,27 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
                         <h2 className="text-center text-lg font-bold text-gray-900 mb-7">Change Password</h2>
 
                         <div className="space-y-4">
-                            <PwInput label="Old Password"         show={showOldPw}     onToggle={() => setShowOldPw((v) => !v)}     />
-                            <PwInput label="New Password"         show={showNewPw}     onToggle={() => setShowNewPw((v) => !v)}     />
-                            <PwInput label="Re Type New Password" show={showConfirmPw} onToggle={() => setShowConfirmPw((v) => !v)} />
+                            <PwInput label="Old Password"         show={showOldPw}     onToggle={() => setShowOldPw((v) => !v)}     value={oldPw}     onChange={setOldPw}     />
+                            <PwInput label="New Password"         show={showNewPw}     onToggle={() => setShowNewPw((v) => !v)}     value={newPw}     onChange={setNewPw}     />
+                            <PwInput label="Re Type New Password" show={showConfirmPw} onToggle={() => setShowConfirmPw((v) => !v)} value={confirmPw} onChange={setConfirmPw} />
                         </div>
+
+                        {pwMsg && <p className={`text-sm text-center mt-4 ${pwMsg.includes('changed') ? 'text-green-600' : 'text-red-500'}`}>{pwMsg}</p>}
 
                         <div className="flex gap-3 mt-8">
                             <button
-                                onClick={() => setShowPassword(false)}
+                                onClick={() => { setShowPassword(false); setOldPw(''); setNewPw(''); setConfirmPw(''); setPwMsg(''); }}
                                 className="flex-1 py-2.5 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                             >
                                 Cancel
                             </button>
                             <button
-                                className="flex-1 py-2.5 rounded-lg text-sm font-medium text-white hover:opacity-90 transition-colors"
+                                onClick={handleChangePassword}
+                                disabled={pwSaving || !oldPw || !newPw || !confirmPw}
+                                className="flex-1 py-2.5 rounded-lg text-sm font-medium text-white hover:opacity-90 transition-colors disabled:opacity-50"
                                 style={{ background: '#0E3B1F' }}
                             >
-                                Update
+                                {pwSaving ? 'Updating...' : 'Update'}
                             </button>
                         </div>
                     </div>
