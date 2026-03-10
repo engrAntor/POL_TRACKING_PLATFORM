@@ -5,6 +5,7 @@ from .models import Listing
 
 class ListingSerializer(serializers.ModelSerializer):
     seller_name = serializers.CharField(source='user.full_name', read_only=True)
+    sds_file_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Listing
@@ -12,16 +13,24 @@ class ListingSerializer(serializers.ModelSerializer):
             'id', 'seller_name', 'name', 'company', 'pol_type',
             'price', 'price_unit', 'description', 'location',
             'brand', 'batch_number', 'expiry', 'shelf_life',
-            'quantity', 'quantity_unit', 'rating',
+            'quantity', 'quantity_unit', 'sds_file', 'sds_file_url', 'rating',
             'category', 'status', 'created_at', 'updated_at',
         ]
-        read_only_fields = ['id', 'seller_name', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'seller_name', 'sds_file_url', 'created_at', 'updated_at']
+
+    def get_sds_file_url(self, obj):
+        if obj.sds_file:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.sds_file.url)
+            return obj.sds_file.url
+        return None
 
 
 class InventoryForMarketSerializer(serializers.ModelSerializer):
     """Shape POLItem data to match the Listing interface for the frontend."""
     seller_name = serializers.CharField(source='user.full_name', read_only=True)
-    name = serializers.CharField(source='product_name')
+    name = serializers.SerializerMethodField()
     company = serializers.SerializerMethodField()
     pol_type = serializers.SerializerMethodField()
     price = serializers.SerializerMethodField()
@@ -46,20 +55,24 @@ class InventoryForMarketSerializer(serializers.ModelSerializer):
             'category', 'status', 'created_at', 'is_inventory',
         ]
 
+    def get_name(self, obj):
+        return obj.product_name or obj.description[:100] or obj.part_number
+
     def get_company(self, obj):
         return ''
 
     def get_pol_type(self, obj):
-        return 'petroleum'
+        return obj.pol_type or 'petroleum'
 
     def get_price(self, obj):
         return None
 
     def get_price_unit(self, obj):
-        return 'Liter'
+        return obj.uom or 'Liter'
 
     def get_description(self, obj):
-        return f"{obj.product_name} — Part #{obj.part_number}"
+        name = obj.product_name or obj.description[:100]
+        return f"{name} — Part #{obj.part_number}"
 
     def get_location(self, obj):
         return ''
@@ -68,7 +81,7 @@ class InventoryForMarketSerializer(serializers.ModelSerializer):
         return ''
 
     def get_quantity_unit(self, obj):
-        return 'Units'
+        return obj.uom or 'Units'
 
     def get_rating(self, obj):
         return None
@@ -90,7 +103,7 @@ class ListingCreateSerializer(serializers.ModelSerializer):
             'name', 'company', 'pol_type', 'price', 'price_unit',
             'description', 'location', 'brand', 'batch_number',
             'expiry', 'shelf_life', 'quantity', 'quantity_unit',
-            'category', 'pol_item',
+            'category', 'pol_item', 'sds_file',
         ]
 
     def create(self, validated_data):
@@ -109,4 +122,6 @@ class SellListingSerializer(serializers.Serializer):
     price_unit = serializers.CharField(required=False)
     location = serializers.CharField(required=False, allow_blank=True)
     brand = serializers.CharField(required=False, allow_blank=True)
+    quantity = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
     quantity_unit = serializers.CharField(required=False)
+    sds_file = serializers.FileField(required=False)

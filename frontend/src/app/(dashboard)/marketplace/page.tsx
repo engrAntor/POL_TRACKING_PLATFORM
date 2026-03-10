@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { MapPin, Filter, ChevronDown, Sparkles, X, Send, MessageSquareText, Minus, Plus } from 'lucide-react';
+import { MapPin, Filter, ChevronDown, Sparkles, X, Send, MessageSquareText, Minus, Plus, Upload, FileText, Download } from 'lucide-react';
 
 const API_BASE = 'http://127.0.0.1:8000/api/marketplace';
 
@@ -22,6 +22,7 @@ interface Listing {
     quantity: string;
     quantity_unit: string;
     rating: string | null;
+    sds_file_url: string | null;
     category: string;
     status: string;
     is_inventory?: boolean;
@@ -46,15 +47,16 @@ export default function MarketplacePage() {
     const [listingType, setListingType] = useState('all');
 
     const [selectedProduct, setSelectedProduct] = useState<Listing | null>(null);
-    const [orderQty, setOrderQty] = useState(1000);
     const [orderSuccess, setOrderSuccess] = useState<string | null>(null);
 
     // Sell form state
     const [sellPrice, setSellPrice] = useState('');
+    const [sellQuantity, setSellQuantity] = useState('');
     const [sellLocation, setSellLocation] = useState('');
     const [sellDescription, setSellDescription] = useState('');
     const [sellPolType, setSellPolType] = useState('petroleum');
     const [sellLoading, setSellLoading] = useState(false);
+    const [sellSdsFile, setSellSdsFile] = useState<File | null>(null);
 
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [chatInput, setChatInput] = useState('');
@@ -118,23 +120,50 @@ export default function MarketplacePage() {
         } catch { console.error('Failed to remove listing'); }
     };
 
+    const [orderLoading, setOrderLoading] = useState(false);
+
     const handlePlaceOrder = async () => {
         if (!selectedProduct) return;
-        setOrderSuccess('Order placed successfully!');
-        setTimeout(() => { setSelectedProduct(null); setOrderSuccess(null); }, 2000);
+        setOrderLoading(true);
+        try {
+            const res = await fetch(`${API_BASE}/checkout/`, {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${getToken()}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    listing_id: selectedProduct.id,
+                    quantity: 1,
+                }),
+            });
+            const data = await res.json();
+            if (res.ok && data.checkout_url) {
+                window.location.href = data.checkout_url;
+            } else {
+                setOrderSuccess(data.error || 'Failed to start checkout.');
+            }
+        } catch {
+            setOrderSuccess('Network error. Please try again.');
+        } finally {
+            setOrderLoading(false);
+        }
     };
 
     const openSellModal = (product: Listing) => {
         setSelectedProduct(product);
         setOrderSuccess(null);
+        setSellSdsFile(null);
         if (product.is_inventory) {
             setSellPrice('');
+            setSellQuantity(product.quantity || '');
             setSellLocation('');
             setSellDescription('');
             setSellPolType('petroleum');
         } else {
             // Pre-fill with existing listing data for edit
             setSellPrice(product.price || '');
+            setSellQuantity(product.quantity || '');
             setSellLocation(product.location || '');
             setSellDescription(product.description || '');
             setSellPolType(product.pol_type || 'petroleum');
@@ -147,34 +176,38 @@ export default function MarketplacePage() {
         try {
             let res;
             if (selectedProduct.is_inventory) {
-                // Create new listing from inventory
+                // Create new listing from inventory (FormData for file upload)
+                const formData = new FormData();
+                formData.append('pol_item_id', String(selectedProduct.id));
+                formData.append('price', sellPrice);
+                formData.append('quantity', sellQuantity);
+                formData.append('description', sellDescription);
+                formData.append('location', sellLocation);
+                formData.append('pol_type', sellPolType);
+                if (sellSdsFile) formData.append('sds_file', sellSdsFile);
                 res = await fetch(`${API_BASE}/listings/sell/`, {
                     method: 'POST',
-                    headers: { Authorization: `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        pol_item_id: selectedProduct.id,
-                        price: sellPrice,
-                        description: sellDescription,
-                        location: sellLocation,
-                        pol_type: sellPolType,
-                    }),
+                    headers: { Authorization: `Bearer ${getToken()}` },
+                    body: formData,
                 });
             } else {
-                // Update existing listing
+                // Update existing listing (FormData for file upload)
+                const formData = new FormData();
+                formData.append('price', sellPrice);
+                formData.append('quantity', sellQuantity);
+                formData.append('description', sellDescription);
+                formData.append('location', sellLocation);
+                formData.append('pol_type', sellPolType);
+                if (sellSdsFile) formData.append('sds_file', sellSdsFile);
                 res = await fetch(`${API_BASE}/listings/${selectedProduct.id}/update/`, {
                     method: 'PATCH',
-                    headers: { Authorization: `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        price: sellPrice,
-                        description: sellDescription,
-                        location: sellLocation,
-                        pol_type: sellPolType,
-                    }),
+                    headers: { Authorization: `Bearer ${getToken()}` },
+                    body: formData,
                 });
             }
             if (res.ok) {
                 setOrderSuccess(selectedProduct.is_inventory ? 'Product listed successfully!' : 'Listing updated!');
-                setTimeout(() => { setSelectedProduct(null); setOrderSuccess(null); setSellPrice(''); setSellLocation(''); setSellDescription(''); fetchListings(); }, 2000);
+                setTimeout(() => { setSelectedProduct(null); setOrderSuccess(null); setSellPrice(''); setSellLocation(''); setSellDescription(''); setSellSdsFile(null); fetchListings(); }, 2000);
             } else {
                 const data = await res.json();
                 setOrderSuccess(data.error || 'Failed.');
@@ -287,7 +320,7 @@ export default function MarketplacePage() {
                                 </div>
                             </div>
                             {product._tab === 'buy' ? (
-                                <button onClick={() => { setSelectedProduct(product); setOrderQty(1000); setOrderSuccess(null); }}
+                                <button onClick={() => { setSelectedProduct(product); setOrderSuccess(null); }}
                                     className="block w-full text-center bg-[#0E3B1F] text-white py-3 rounded-lg font-medium hover:bg-[#0E3B1F]/90 transition-colors shadow-lg shadow-green-900/10">
                                     Purchase Now
                                 </button>
@@ -311,7 +344,7 @@ export default function MarketplacePage() {
             {selectedProduct && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm relative max-h-[90vh] overflow-y-auto">
-                        <button onClick={() => { setSelectedProduct(null); setSellPrice(''); setSellLocation(''); setSellDescription(''); }} className="absolute top-4 right-4 w-8 h-8 bg-gray-900 text-white rounded-full flex items-center justify-center hover:bg-gray-700 z-10"><X className="w-4 h-4" /></button>
+                        <button onClick={() => { setSelectedProduct(null); setSellPrice(''); setSellLocation(''); setSellDescription(''); setSellSdsFile(null); }} className="absolute top-4 right-4 w-8 h-8 bg-gray-900 text-white rounded-full flex items-center justify-center hover:bg-gray-700 z-10"><X className="w-4 h-4" /></button>
                         <div className="p-6">
                             <div className="inline-flex items-center bg-[#1a4731] text-white text-sm font-semibold px-4 py-1.5 rounded-full mb-5">
                                 {selectedProduct._tab === 'buy' ? 'Order Summary' : selectedProduct.is_inventory ? 'Sell Product' : 'Edit Listing'}
@@ -322,35 +355,44 @@ export default function MarketplacePage() {
                             {selectedProduct._tab === 'sell' ? (
                                 <>
                                     {/* Sell / Edit Form */}
-                                    <div className="border-t border-gray-100 mt-4 pt-4 space-y-4">
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-gray-500">Quantity:</span>
-                                            <span className="text-gray-800 font-medium">{parseFloat(selectedProduct.quantity) % 1 === 0 ? parseInt(selectedProduct.quantity) : selectedProduct.quantity} {selectedProduct.quantity_unit}</span>
-                                        </div>
-                                        {selectedProduct.expiry && <div className="flex justify-between text-sm"><span className="text-gray-500">Expiry:</span><span className="text-gray-800">{selectedProduct.expiry}</span></div>}
-                                        {selectedProduct.shelf_life && <div className="flex justify-between text-sm"><span className="text-gray-500">Shelf Life:</span><span className="text-gray-800">{selectedProduct.shelf_life}</span></div>}
-                                    </div>
                                     <div className="border-t border-gray-100 mt-4 pt-4 space-y-3">
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Price per unit *</label>
                                             <input type="number" value={sellPrice} onChange={(e) => setSellPrice(e.target.value)} placeholder="e.g. 2.50" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#0E3B1F]" />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">POL Type</label>
-                                            <select value={sellPolType} onChange={(e) => setSellPolType(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#0E3B1F]">
-                                                <option value="petroleum">Petroleum</option>
-                                                <option value="oil">Oil</option>
-                                                <option value="lubricant">Lubricant</option>
-                                                <option value="other">Other</option>
-                                            </select>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Quantity ({selectedProduct.quantity_unit})</label>
+                                            <input type="number" value={sellQuantity} onChange={(e) => setSellQuantity(e.target.value)} placeholder="e.g. 500" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#0E3B1F]" />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                                            <input type="text" value={sellLocation} onChange={(e) => setSellLocation(e.target.value)} placeholder="e.g. Port Area" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#0E3B1F]" />
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
+                                            <input type="text" value={selectedProduct.expiry || 'N/A'} readOnly className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm text-gray-500 cursor-not-allowed" />
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                                             <textarea value={sellDescription} onChange={(e) => setSellDescription(e.target.value)} placeholder="Brief description..." rows={2} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#0E3B1F] resize-none" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Safety Data Sheet Upload</label>
+                                            <label className="flex items-center gap-2 w-full border border-dashed border-gray-300 rounded-lg px-3 py-3 cursor-pointer hover:border-[#0E3B1F] hover:bg-green-50/30 transition-colors">
+                                                <Upload className="h-4 w-4 text-gray-400" />
+                                                <span className="text-sm text-gray-500 truncate flex-1">
+                                                    {sellSdsFile ? sellSdsFile.name : 'Upload PDF file'}
+                                                </span>
+                                                <input type="file" accept=".pdf" className="hidden" onChange={(e) => setSellSdsFile(e.target.files?.[0] || null)} />
+                                            </label>
+                                            {sellSdsFile && (
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <FileText className="h-3.5 w-3.5 text-green-600" />
+                                                    <span className="text-xs text-green-700 truncate">{sellSdsFile.name}</span>
+                                                    <button type="button" onClick={() => setSellSdsFile(null)} className="text-xs text-red-500 hover:text-red-700 ml-auto">Remove</button>
+                                                </div>
+                                            )}
+                                            {!sellSdsFile && selectedProduct && !selectedProduct.is_inventory && selectedProduct.sds_file_url && (
+                                                <a href={selectedProduct.sds_file_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 mt-1 text-xs text-blue-600 hover:text-blue-800">
+                                                    <FileText className="h-3.5 w-3.5" /> Current SDS attached
+                                                </a>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="mt-5">
@@ -361,7 +403,7 @@ export default function MarketplacePage() {
                                                 <button onClick={handleSellListing} disabled={!sellPrice || sellLoading} className="w-full bg-[#1a2e22] text-white py-3 rounded-xl font-semibold hover:bg-[#2d5a45] disabled:opacity-50">
                                                     {sellLoading ? 'Saving...' : selectedProduct.is_inventory ? 'List for Sale' : 'Update Listing'}
                                                 </button>
-                                                <button onClick={() => { setSelectedProduct(null); setSellPrice(''); setSellLocation(''); setSellDescription(''); }} className="w-full border border-gray-300 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-50">Cancel</button>
+                                                <button onClick={() => { setSelectedProduct(null); setSellPrice(''); setSellLocation(''); setSellDescription(''); setSellSdsFile(null); }} className="w-full border border-gray-300 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-50">Cancel</button>
                                             </div>
                                         )}
                                     </div>
@@ -374,11 +416,7 @@ export default function MarketplacePage() {
                                         <div className="flex items-center justify-between"><span className="font-semibold text-gray-900">Brand</span><span className="text-[#0E3B1F] font-semibold">{selectedProduct.brand || selectedProduct.company}</span></div>
                                         <div className="flex items-center justify-between">
                                             <span className="font-semibold text-gray-900">Quantity</span>
-                                            <div className="flex items-center border border-[#1a4731] rounded-lg overflow-hidden">
-                                                <button onClick={() => setOrderQty(q => Math.max(100, q - 100))} className="px-3 py-1.5 text-[#1a4731] hover:bg-green-50"><Minus className="w-3 h-3" /></button>
-                                                <span className="px-3 py-1.5 text-sm font-medium text-gray-800 min-w-[90px] text-center">{orderQty} {selectedProduct.price_unit || 'liter'}</span>
-                                                <button onClick={() => setOrderQty(q => q + 100)} className="px-3 py-1.5 text-[#1a4731] hover:bg-green-50"><Plus className="w-3 h-3" /></button>
-                                            </div>
+                                            <span className="text-[#0E3B1F] font-semibold">{parseFloat(selectedProduct.quantity) % 1 === 0 ? parseInt(selectedProduct.quantity) : selectedProduct.quantity} {selectedProduct.quantity_unit}</span>
                                         </div>
                                     </div>
                                     <div className="border-t border-gray-100 mt-4 pt-4 space-y-3">
@@ -386,6 +424,24 @@ export default function MarketplacePage() {
                                         {selectedProduct.expiry && <div className="flex justify-between text-sm"><span className="text-gray-500">Expiry :</span><span className="text-gray-800">{selectedProduct.expiry}</span></div>}
                                         {selectedProduct.shelf_life && <div className="flex justify-between text-sm"><span className="text-gray-500">Shelf Life :</span><span className="text-gray-800">{selectedProduct.shelf_life}</span></div>}
                                     </div>
+                                    {selectedProduct.sds_file_url && (
+                                        <div className="border-t border-gray-100 mt-4 pt-4">
+                                            <button onClick={async () => {
+                                                const res = await fetch(selectedProduct.sds_file_url!);
+                                                const blob = await res.blob();
+                                                const url = URL.createObjectURL(blob);
+                                                const a = document.createElement('a');
+                                                a.href = url;
+                                                a.download = `SDS-${selectedProduct.name}.pdf`;
+                                                a.click();
+                                                URL.revokeObjectURL(url);
+                                            }}
+                                                className="flex items-center gap-2 w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-[#0E3B1F] font-medium hover:bg-green-50 transition-colors">
+                                                <Download className="h-4 w-4" />
+                                                Download Safety Data Sheet
+                                            </button>
+                                        </div>
+                                    )}
                                     <div className="border-t border-gray-100 mt-4 pt-4 flex justify-between items-center mb-6">
                                         <span className="font-bold text-gray-900">Price</span>
                                         <span className="text-[#0E3B1F] font-bold">${selectedProduct.price}/{selectedProduct.price_unit || 'Liter'}</span>
@@ -394,7 +450,9 @@ export default function MarketplacePage() {
                                         <div className="w-full bg-green-50 text-green-700 py-3 rounded-xl font-semibold text-center border border-green-200">{orderSuccess}</div>
                                     ) : (
                                         <div className="space-y-3">
-                                            <button onClick={handlePlaceOrder} className="w-full bg-[#1a2e22] text-white py-3 rounded-xl font-semibold hover:bg-[#2d5a45]">Continue To Payment</button>
+                                            <button onClick={handlePlaceOrder} disabled={orderLoading} className="w-full bg-[#1a2e22] text-white py-3 rounded-xl font-semibold hover:bg-[#2d5a45] disabled:opacity-50">
+                                                {orderLoading ? 'Redirecting to Stripe...' : 'Continue To Payment'}
+                                            </button>
                                             <button onClick={() => setSelectedProduct(null)} className="w-full border border-gray-300 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-50">Back To Marketplace</button>
                                         </div>
                                     )}

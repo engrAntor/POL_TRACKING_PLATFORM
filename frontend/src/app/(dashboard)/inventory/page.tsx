@@ -1,29 +1,59 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Search, Filter, ChevronDown, Sparkles, X, Send, MessageSquareText } from 'lucide-react';
+import { Search, Sparkles, X, Send, MessageSquareText, ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react';
 
 const API_BASE = 'http://127.0.0.1:8000/api/dashboard';
 
 interface InventoryItem {
     id: number;
-    product_name: string;
     part_number: string;
+    description: string;
+    pol_type: string;
+    uom: string;
+    quantity: string;
     shelf_life: string;
     expiry: string;
     expiry_status: string;
-    status: string;
-    quantity: string;
+    condition: string;
     price_per_unit: string;
+    status: string;
+    // Optional
+    product_name: string;
+    alt_part_number: string;
+    manufacturer_part_number: string;
+    mil_spec: string;
+    serial_number: string;
+    batch_number: string;
+    source: string;
+    balance: string;
+    notes: string;
+    image: string | null;
+    msds_file: string | null;
+    created_at: string;
+    updated_at: string;
 }
+
+const typeLabels: Record<string, string> = {
+    petroleum: 'Petroleum', oil: 'Oil', lubricant: 'Lubricant',
+};
+
+const conditionLabels: Record<string, string> = {
+    new_pol: 'New POL', leftover_pol: 'Leftover POL', opened_pol: 'Opened POL',
+};
+
+const uomLabels: Record<string, string> = {
+    QT: 'Quart', OZ: 'Ounce', LB: 'Pound', RL: 'Roll', EA: 'Each',
+    GAL: 'Gallon', ML: 'Millilitre', PT: 'Pint', KT: 'Kit',
+    GM: 'Gram', FT: 'Feet', 'SQ ST': 'Square Feet', YD: 'Yard', CC: 'Cubic Centimeter',
+};
 
 export default function InventoryPage() {
     const [items, setItems] = useState<InventoryItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState('');
-    const [filterStatus, setFilterStatus] = useState('');
-    const [filterExpiry, setFilterExpiry] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     // Chat state
     const [isChatOpen, setIsChatOpen] = useState(false);
@@ -35,21 +65,41 @@ export default function InventoryPage() {
 
     const getToken = () => localStorage.getItem('access_token');
 
-    // Debounce search input
-    useEffect(() => {
-        const timer = setTimeout(() => setDebouncedSearch(searchQuery), 400);
-        return () => clearTimeout(timer);
-    }, [searchQuery]);
+    const refreshAccessToken = async (): Promise<string | null> => {
+        const refresh = localStorage.getItem('refresh_token');
+        if (!refresh) return null;
+        try {
+            const res = await fetch('http://127.0.0.1:8000/api/accounts/token/refresh/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refresh }),
+            });
+            if (res.ok) {
+                const data = await res.json();
+                localStorage.setItem('access_token', data.access);
+                return data.access;
+            }
+        } catch { /* ignore */ }
+        return null;
+    };
+
+    const authFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
+        const headers: Record<string, string> = { ...(options.headers as Record<string, string> || {}) };
+        headers['Authorization'] = `Bearer ${getToken()}`;
+        let res = await fetch(url, { ...options, headers });
+        if (res.status === 401) {
+            const newToken = await refreshAccessToken();
+            if (newToken) {
+                headers['Authorization'] = `Bearer ${newToken}`;
+                res = await fetch(url, { ...options, headers });
+            }
+        }
+        return res;
+    };
 
     const fetchInventory = useCallback(async () => {
         try {
-            const params = new URLSearchParams();
-            if (debouncedSearch) params.append('search', debouncedSearch);
-            if (filterStatus) params.append('status', filterStatus);
-            if (filterExpiry) params.append('expiry_status', filterExpiry);
-            const res = await fetch(`${API_BASE}/inventory/?${params}`, {
-                headers: { Authorization: `Bearer ${getToken()}` },
-            });
+            const res = await authFetch(`${API_BASE}/inventory/`);
             if (res.ok) {
                 const data = await res.json();
                 setItems(Array.isArray(data) ? data : data.results || []);
@@ -59,7 +109,7 @@ export default function InventoryPage() {
         } finally {
             setLoading(false);
         }
-    }, [debouncedSearch, filterStatus, filterExpiry]);
+    }, []);
 
     useEffect(() => { fetchInventory(); }, [fetchInventory]);
 
@@ -73,105 +123,137 @@ export default function InventoryPage() {
         setChatInput('');
     };
 
-    const statusBadge = (s: string) => {
-        if (s === 'healthy') return 'bg-[#65a30d] text-white';
-        if (s === 'expired') return 'bg-red-500 text-white';
-        if (s === 'low_stock') return 'bg-yellow-500 text-white';
-        return 'bg-gray-300 text-gray-700';
-    };
+    const filteredItems = items.filter((item) => {
+        const q = searchQuery.toLowerCase();
+        return (
+            item.part_number.toLowerCase().includes(q) ||
+            item.description.toLowerCase().includes(q) ||
+            (item.product_name || '').toLowerCase().includes(q)
+        );
+    });
 
-    const statusLabel = (s: string) => {
-        if (s === 'low_stock') return 'Low Stock';
-        return s.charAt(0).toUpperCase() + s.slice(1);
+    const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+    const paginatedItems = filteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+    const conditionBadge = (s: string) => {
+        const c: Record<string, string> = { new_pol: 'bg-blue-100 text-blue-700', leftover_pol: 'bg-yellow-100 text-yellow-700', opened_pol: 'bg-orange-100 text-orange-700' };
+        return c[s] || 'bg-gray-100 text-gray-700';
     };
 
     return (
         <div className="space-y-6">
             {/* Search Bar */}
-            <div className="relative w-full max-w-2xl">
+            <div className="relative w-full max-w-full md:max-w-md">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
                     type="text"
                     placeholder="Search"
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white shadow-sm"
+                    onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                    className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
             </div>
 
-            {/* Filters */}
-            <div className="flex flex-wrap items-center gap-4">
-                <button className="flex items-center gap-2 bg-[#0E3B1F] text-white px-6 py-2.5 rounded-lg hover:bg-[#0E3B1F]/90 transition-colors">
-                    <Filter className="h-4 w-4" />
-                    <span>Filter</span>
-                </button>
-
-                <div className="relative">
-                    <select
-                        value={filterStatus}
-                        onChange={(e) => setFilterStatus(e.target.value)}
-                        className="appearance-none flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors min-w-[120px] cursor-pointer pr-8"
-                    >
-                        <option value="">All Status</option>
-                        <option value="healthy">Healthy</option>
-                        <option value="expired">Expired</option>
-                        <option value="low_stock">Low Stock</option>
-                    </select>
-                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-                </div>
-
-                <div className="relative">
-                    <select
-                        value={filterExpiry}
-                        onChange={(e) => setFilterExpiry(e.target.value)}
-                        className="appearance-none flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors min-w-[140px] cursor-pointer pr-8"
-                    >
-                        <option value="">All Expiry</option>
-                        <option value="active">Active</option>
-                        <option value="near_expiry">Near Expiry</option>
-                        <option value="expired">Expired</option>
-                    </select>
-                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-                </div>
-            </div>
-
             {/* Table */}
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden overflow-x-auto shadow-sm">
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden overflow-x-auto">
                 {loading ? (
                     <div className="p-8 text-center text-gray-500">Loading...</div>
-                ) : items.length === 0 ? (
+                ) : filteredItems.length === 0 ? (
                     <div className="p-8 text-center text-gray-500">No inventory items found.</div>
                 ) : (
-                    <table className="w-full min-w-[900px]">
+                    <table className="w-full min-w-[2000px]">
                         <thead>
-                            <tr className="border-b border-gray-200 bg-white">
-                                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Product Name</th>
-                                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Part Number</th>
-                                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Shelf Life</th>
-                                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Expiry</th>
-                                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Qty</th>
-                                <th className="text-left px-6 py-4 text-sm font-semibold text-gray-900">Status</th>
+                            <tr className="border-b border-gray-200">
+                                {/* Required columns */}
+                                <th className="text-left px-4 py-4 text-sm font-semibold text-gray-900 whitespace-nowrap">Image</th>
+                                <th className="text-left px-4 py-4 text-sm font-semibold text-gray-900 whitespace-nowrap">Part Number</th>
+                                <th className="text-left px-4 py-4 text-sm font-semibold text-gray-900 whitespace-nowrap">Description</th>
+                                <th className="text-left px-4 py-4 text-sm font-semibold text-gray-900 whitespace-nowrap">Type</th>
+                                <th className="text-left px-4 py-4 text-sm font-semibold text-gray-900 whitespace-nowrap">UOM</th>
+                                <th className="text-left px-4 py-4 text-sm font-semibold text-gray-900 whitespace-nowrap">Stock</th>
+                                <th className="text-left px-4 py-4 text-sm font-semibold text-gray-900 whitespace-nowrap">Shelf Life</th>
+                                <th className="text-left px-4 py-4 text-sm font-semibold text-gray-900 whitespace-nowrap">Expiry</th>
+                                <th className="text-left px-4 py-4 text-sm font-semibold text-gray-900 whitespace-nowrap">Condition</th>
+                                <th className="text-left px-4 py-4 text-sm font-semibold text-gray-900 whitespace-nowrap">Price</th>
+                                {/* Optional columns */}
+                                <th className="text-left px-4 py-4 text-sm font-semibold text-gray-900 whitespace-nowrap">Product Name</th>
+                                <th className="text-left px-4 py-4 text-sm font-semibold text-gray-900 whitespace-nowrap">Alt Part Number</th>
+                                <th className="text-left px-4 py-4 text-sm font-semibold text-gray-900 whitespace-nowrap">Mfr Part Number</th>
+                                <th className="text-left px-4 py-4 text-sm font-semibold text-gray-900 whitespace-nowrap">MIL Spec</th>
+                                <th className="text-left px-4 py-4 text-sm font-semibold text-gray-900 whitespace-nowrap">Serial Number</th>
+                                <th className="text-left px-4 py-4 text-sm font-semibold text-gray-900 whitespace-nowrap">Batch Number</th>
+                                <th className="text-left px-4 py-4 text-sm font-semibold text-gray-900 whitespace-nowrap">Source</th>
+                                <th className="text-left px-4 py-4 text-sm font-semibold text-gray-900 whitespace-nowrap">Balance</th>
+                                <th className="text-left px-4 py-4 text-sm font-semibold text-gray-900 whitespace-nowrap">Notes</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {items.map((item) => (
+                            {paginatedItems.map((item) => (
                                 <tr key={item.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50/50">
-                                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{item.product_name}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-900">{item.part_number}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-900">{item.shelf_life}</td>
-                                    <td className="px-6 py-4 text-sm text-red-500 font-medium">{item.expiry}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-900">{parseFloat(item.quantity) % 1 === 0 ? parseInt(item.quantity) : item.quantity}</td>
-                                    <td className="px-6 py-4">
-                                        <span className={`inline-flex items-center px-3 py-1 rounded text-xs font-medium ${statusBadge(item.status)}`}>
-                                            {statusLabel(item.status)}
+                                    {/* Required columns */}
+                                    <td className="px-4 py-4 whitespace-nowrap">
+                                        {item.image ? (
+                                            <img src={item.image} alt={item.product_name || item.part_number} className="w-10 h-10 rounded-lg object-cover border border-gray-200" />
+                                        ) : (
+                                            <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                                                <ImageIcon className="w-4 h-4 text-gray-400" />
+                                            </div>
+                                        )}
+                                    </td>
+                                    <td className="px-4 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">{item.part_number}</td>
+                                    <td className="px-4 py-4 text-sm text-gray-900 max-w-[200px] truncate">{item.description}</td>
+                                    <td className="px-4 py-4 text-sm text-gray-900 whitespace-nowrap">{typeLabels[item.pol_type] || item.pol_type}</td>
+                                    <td className="px-4 py-4 text-sm text-gray-900 whitespace-nowrap">{uomLabels[item.uom] || item.uom}</td>
+                                    <td className="px-4 py-4 text-sm text-gray-900 whitespace-nowrap">{parseFloat(item.quantity) % 1 === 0 ? parseInt(item.quantity) : item.quantity}</td>
+                                    <td className="px-4 py-4 text-sm text-gray-900 whitespace-nowrap">{item.shelf_life}</td>
+                                    <td className="px-4 py-4 text-sm text-gray-900 whitespace-nowrap">{item.expiry}</td>
+                                    <td className="px-4 py-4 whitespace-nowrap">
+                                        <span className={`text-xs font-medium px-2 py-1 rounded-full ${conditionBadge(item.condition)}`}>
+                                            {conditionLabels[item.condition] || item.condition}
                                         </span>
                                     </td>
+                                    <td className="px-4 py-4 text-sm text-gray-900 whitespace-nowrap">${item.price_per_unit}</td>
+                                    {/* Optional columns */}
+                                    <td className="px-4 py-4 text-sm text-gray-900 whitespace-nowrap">{item.product_name || ''}</td>
+                                    <td className="px-4 py-4 text-sm text-gray-900 whitespace-nowrap">{item.alt_part_number || ''}</td>
+                                    <td className="px-4 py-4 text-sm text-gray-900 whitespace-nowrap">{item.manufacturer_part_number || ''}</td>
+                                    <td className="px-4 py-4 text-sm text-gray-900 whitespace-nowrap">{item.mil_spec || ''}</td>
+                                    <td className="px-4 py-4 text-sm text-gray-900 whitespace-nowrap">{item.serial_number || ''}</td>
+                                    <td className="px-4 py-4 text-sm text-gray-900 whitespace-nowrap">{item.batch_number || ''}</td>
+                                    <td className="px-4 py-4 text-sm text-gray-900 whitespace-nowrap">{item.source || ''}</td>
+                                    <td className="px-4 py-4 text-sm text-gray-900 whitespace-nowrap">{item.balance || ''}</td>
+                                    <td className="px-4 py-4 text-sm text-gray-900 max-w-[200px] truncate">{item.notes || ''}</td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 )}
             </div>
+
+            {/* Pagination */}
+            {filteredItems.length > itemsPerPage && (
+                <div className="flex items-center justify-between">
+                    <p className="text-sm text-gray-600">
+                        Showing {(currentPage - 1) * itemsPerPage + 1}–{Math.min(currentPage * itemsPerPage, filteredItems.length)} of {filteredItems.length}
+                    </p>
+                    <div className="flex items-center gap-2">
+                        <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}
+                            className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
+                            <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                            <button key={page} onClick={() => setCurrentPage(page)}
+                                className={`px-3 py-1.5 text-sm rounded-lg border ${page === currentPage ? 'bg-[#0E3B1F] text-white border-[#0E3B1F]' : 'border-gray-300 hover:bg-gray-50 text-gray-700'}`}>
+                                {page}
+                            </button>
+                        ))}
+                        <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}
+                            className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* AI Chat Widget */}
             <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">

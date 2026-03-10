@@ -106,6 +106,7 @@ CORS_ALLOWED_ORIGINS = config(
     cast=Csv(),
 )
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = DEBUG  # Allow all origins in development
 CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000']
 
 # ── Django REST Framework ─────────────────────────────────────────────────────
@@ -164,3 +165,7 @@ FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')
 # ── Google OAuth ─────────────────────────────────────────────────────────────
 GOOGLE_CLIENT_ID = config('GOOGLE_CLIENT_ID', default='')
 GOOGLE_CLIENT_SECRET = config('GOOGLE_CLIENT_SECRET', default='')
+
+# ── Stripe ───────────────────────────────────────────────────────────────────
+STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default='')
+STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY', default='')

@@ -21,6 +21,16 @@ class User(AbstractBaseUser, PermissionsMixin):
     job_title = models.CharField(max_length=200, blank=True)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='admin')
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
+
+    # Extra profile fields (one-time fill)
+    gst_number = models.CharField(max_length=50, blank=True)
+    company_address = models.TextField(blank=True)
+    delivery_address = models.TextField(blank=True)
+    contact_points = models.TextField(blank=True, help_text='Contact points / key contacts')
+    terms_conditions = models.TextField(blank=True, help_text='Terms & Conditions text')
+    terms_conditions_file = models.FileField(upload_to='terms_conditions/', blank=True, null=True)
+    delivery_terms = models.TextField(blank=True)
+
     is_email_verified = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)

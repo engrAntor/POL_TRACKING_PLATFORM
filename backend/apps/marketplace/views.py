@@ -1,4 +1,8 @@
+import stripe
+from django.conf import settings as django_settings
+
 from rest_framework import generics, status
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -7,6 +11,8 @@ from apps.accounts.permissions import IsAdmin
 from apps.admin_dashboard.models import POLItem
 from .models import Listing
 from .serializers import ListingSerializer, ListingCreateSerializer, SellListingSerializer, InventoryForMarketSerializer
+
+stripe.api_key = django_settings.STRIPE_SECRET_KEY
 
 
 # ── Marketplace Listings (Browse) ─────────────────────────────────────────────
@@ -62,6 +68,9 @@ class ListingDetailView(generics.RetrieveAPIView):
     serializer_class = ListingSerializer
     queryset = Listing.objects.select_related('user').all()
 
+    def get_serializer_context(self):
+        return {**super().get_serializer_context(), 'request': self.request}
+
 
 # ── Create Listing ────────────────────────────────────────────────────────────
 class ListingCreateView(generics.CreateAPIView):
@@ -72,6 +81,7 @@ class ListingCreateView(generics.CreateAPIView):
 # ── Sell from Inventory ───────────────────────────────────────────────────────
 class SellFromInventoryView(APIView):
     permission_classes = [IsAdmin]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def post(self, request):
         serializer = SellListingSerializer(data=request.data)
@@ -99,7 +109,7 @@ class SellFromInventoryView(APIView):
         listing = Listing.objects.create(
             user=request.user,
             pol_item=pol_item,
-            name=pol_item.product_name,
+            name=pol_item.product_name or pol_item.description[:200] or pol_item.part_number,
             company=serializer.validated_data.get('company', ''),
             pol_type=serializer.validated_data.get('pol_type', 'petroleum'),
             price=serializer.validated_data['price'],
@@ -110,14 +120,15 @@ class SellFromInventoryView(APIView):
             batch_number=pol_item.part_number,
             expiry=pol_item.expiry,
             shelf_life=pol_item.shelf_life,
-            quantity=pol_item.quantity,
+            quantity=serializer.validated_data.get('quantity', pol_item.quantity),
             quantity_unit=serializer.validated_data.get('quantity_unit', 'Liter'),
             category='sell',
             status='listed',
+            sds_file=serializer.validated_data.get('sds_file'),
         )
 
         return Response(
-            ListingSerializer(listing).data,
+            ListingSerializer(listing, context={'request': request}).data,
             status=status.HTTP_201_CREATED,
         )
 
@@ -126,6 +137,7 @@ class SellFromInventoryView(APIView):
 class ListingUpdateView(generics.UpdateAPIView):
     permission_classes = [IsAdmin]
     serializer_class = ListingSerializer
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_queryset(self):
         return Listing.objects.filter(user=self.request.user)
@@ -158,3 +170,60 @@ class ListingDeleteView(APIView):
 
         listing.delete()
         return Response({'message': 'Listing deleted.'}, status=status.HTTP_204_NO_CONTENT)
+
+
+# ── Stripe Checkout ──────────────────────────────────────────────────────────
+class CreateCheckoutSessionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        listing_id = request.data.get('listing_id')
+
+        try:
+            listing = Listing.objects.get(pk=listing_id, status='listed')
+        except Listing.DoesNotExist:
+            return Response(
+                {'error': 'Listing not found.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if not listing.price:
+            return Response(
+                {'error': 'This listing has no price set.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Total = price_per_unit * seller's listed quantity
+        total_cents = int(float(listing.price) * float(listing.quantity) * 100)
+
+        frontend_url = django_settings.FRONTEND_URL
+
+        try:
+            qty_display = int(listing.quantity) if float(listing.quantity) % 1 == 0 else listing.quantity
+            session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=[{
+                    'price_data': {
+                        'currency': 'usd',
+                        'product_data': {
+                            'name': listing.name,
+                            'description': f'{listing.pol_type.capitalize()} - {listing.company} | Qty: {qty_display} {listing.quantity_unit}',
+                        },
+                        'unit_amount': total_cents,
+                    },
+                    'quantity': 1,
+                }],
+                mode='payment',
+                success_url=f'{frontend_url}/marketplace?payment=success',
+                cancel_url=f'{frontend_url}/marketplace?payment=cancelled',
+                metadata={
+                    'listing_id': str(listing.id),
+                    'buyer_id': str(request.user.id),
+                },
+            )
+            return Response({'checkout_url': session.url})
+        except stripe.error.StripeError as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )

@@ -7,10 +7,16 @@ class POLItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = POLItem
         fields = [
-            'id', 'product_name', 'part_number',
-            'shelf_life', 'expiry',
-            'expiry_status', 'status',
-            'quantity', 'price_per_unit', 'msds_file', 'created_at', 'updated_at',
+            'id',
+            # Required
+            'part_number', 'description', 'pol_type', 'uom',
+            'quantity', 'shelf_life', 'expiry', 'expiry_status',
+            'condition', 'price_per_unit', 'status',
+            # Optional
+            'product_name', 'alt_part_number', 'manufacturer_part_number',
+            'mil_spec', 'serial_number', 'batch_number',
+            'source', 'balance', 'notes',
+            'image', 'msds_file', 'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 
@@ -19,9 +25,14 @@ class POLItemCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = POLItem
         fields = [
-            'product_name', 'part_number',
-            'shelf_life', 'expiry',
-            'quantity', 'price_per_unit',
+            # Required
+            'part_number', 'description', 'pol_type', 'uom',
+            'quantity', 'shelf_life', 'expiry', 'condition', 'price_per_unit',
+            # Optional
+            'product_name', 'alt_part_number', 'manufacturer_part_number',
+            'mil_spec', 'serial_number', 'batch_number',
+            'source', 'balance', 'notes',
+            'image',
         ]
 
     def create(self, validated_data):

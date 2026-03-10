@@ -7,7 +7,6 @@ class Listing(models.Model):
         ('petroleum', 'Petroleum'),
         ('oil', 'Oil'),
         ('lubricant', 'Lubricant'),
-        ('other', 'Other'),
     )
     CATEGORY_CHOICES = (
         ('buy', 'Buy'),
@@ -43,6 +42,7 @@ class Listing(models.Model):
     shelf_life = models.CharField(max_length=50, blank=True)
     quantity = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     quantity_unit = models.CharField(max_length=20, default='Liter')
+    sds_file = models.FileField(upload_to='sds/', null=True, blank=True)
     rating = models.DecimalField(max_digits=3, decimal_places=1, null=True, blank=True)
     category = models.CharField(max_length=10, choices=CATEGORY_CHOICES, default='sell')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='listed')

@@ -69,12 +69,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const [showPassword, setShowPassword] = useState(false);
 
     // Profile data
-    const [profileData, setProfileData] = useState({ first_name: '', last_name: '', email: '', phone: '', company: '', job_title: '', avatar: '' });
+    const [profileData, setProfileData] = useState({ first_name: '', last_name: '', email: '', phone: '', company: '', job_title: '', avatar: '', gst_number: '', company_address: '', delivery_address: '', contact_points: '', terms_conditions: '', terms_conditions_file: '', delivery_terms: '' });
     const [profileName, setProfileName] = useState('');
     const [profileEmail, setProfileEmail] = useState('');
     const [profilePhone, setProfilePhone] = useState('');
     const [profileCompany, setProfileCompany] = useState('');
     const [profileJobTitle, setProfileJobTitle] = useState('');
+    const [profileGst, setProfileGst] = useState('');
+    const [profileCompanyAddr, setProfileCompanyAddr] = useState('');
+    const [profileDeliveryAddr, setProfileDeliveryAddr] = useState('');
+    const [profileContactPoints, setProfileContactPoints] = useState('');
+    const [profileTerms, setProfileTerms] = useState('');
+    const [termsFile, setTermsFile] = useState<File | null>(null);
+    const [profileDeliveryTerms, setProfileDeliveryTerms] = useState('');
     const [profileSaving, setProfileSaving] = useState(false);
     const [profileMsg, setProfileMsg] = useState('');
 
@@ -128,6 +135,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 setProfilePhone(data.phone || '');
                 setProfileCompany(data.company || '');
                 setProfileJobTitle(data.job_title || '');
+                setProfileGst(data.gst_number || '');
+                setProfileCompanyAddr(data.company_address || '');
+                setProfileDeliveryAddr(data.delivery_address || '');
+                setProfileContactPoints(data.contact_points || '');
+                setProfileTerms(data.terms_conditions || '');
+                setProfileDeliveryTerms(data.delivery_terms || '');
             }
         } catch { /* silent */ }
     }, []);
@@ -157,7 +170,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             formData.append('phone', profilePhone);
             formData.append('company', profileCompany);
             formData.append('job_title', profileJobTitle);
+            formData.append('gst_number', profileGst);
+            formData.append('company_address', profileCompanyAddr);
+            formData.append('delivery_address', profileDeliveryAddr);
+            formData.append('contact_points', profileContactPoints);
+            formData.append('terms_conditions', profileTerms);
+            formData.append('delivery_terms', profileDeliveryTerms);
             if (avatarFile) formData.append('avatar', avatarFile);
+            if (termsFile) formData.append('terms_conditions_file', termsFile);
 
             const res = await fetch(`${API_AUTH}/profile/`, {
                 method: 'PATCH',
@@ -169,6 +189,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 setProfileData(data);
                 setAvatarFile(null);
                 setAvatarPreview('');
+                setTermsFile(null);
                 const userStr = localStorage.getItem('user');
                 if (userStr) {
                     const user = JSON.parse(userStr);
@@ -450,7 +471,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     onClick={() => setShowAccount(false)}
                 >
                     <div
-                        className="relative bg-white rounded-2xl shadow-xl w-full max-w-[420px] px-6 sm:px-8 py-8"
+                        className="relative bg-white rounded-2xl shadow-xl w-full max-w-[520px] max-h-[90vh] overflow-y-auto px-6 sm:px-8 py-8"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <button
@@ -496,6 +517,44 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
                                 <label className="sm:w-20 text-sm font-medium text-gray-700 shrink-0">Job Title</label>
                                 <input type="text" value={profileJobTitle} onChange={(e) => setProfileJobTitle(e.target.value)} placeholder="Job title" className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                            </div>
+
+                            <div className="border-t border-gray-200 my-2" />
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Additional Details</p>
+
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                                <label className="sm:w-20 text-sm font-medium text-gray-700 shrink-0">GST No.</label>
+                                <input type="text" value={profileGst} onChange={(e) => setProfileGst(e.target.value)} placeholder="GST Number" className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                            </div>
+                            <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4">
+                                <label className="sm:w-20 text-sm font-medium text-gray-700 shrink-0 pt-2">Company Address</label>
+                                <textarea value={profileCompanyAddr} onChange={(e) => setProfileCompanyAddr(e.target.value)} placeholder="Company address" rows={2} className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 resize-none" />
+                            </div>
+                            <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4">
+                                <label className="sm:w-20 text-sm font-medium text-gray-700 shrink-0 pt-2">Delivery Address</label>
+                                <textarea value={profileDeliveryAddr} onChange={(e) => setProfileDeliveryAddr(e.target.value)} placeholder="Delivery address" rows={2} className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 resize-none" />
+                            </div>
+                            <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4">
+                                <label className="sm:w-20 text-sm font-medium text-gray-700 shrink-0 pt-2">Contact Points</label>
+                                <textarea value={profileContactPoints} onChange={(e) => setProfileContactPoints(e.target.value)} placeholder="Key contacts / contact points" rows={2} className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 resize-none" />
+                            </div>
+                            <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4">
+                                <label className="sm:w-20 text-sm font-medium text-gray-700 shrink-0 pt-2">Terms & Conditions</label>
+                                <div className="flex-1 space-y-2">
+                                    <textarea value={profileTerms} onChange={(e) => setProfileTerms(e.target.value)} placeholder="Terms & Conditions" rows={3} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 resize-none" />
+                                    <div className="flex items-center gap-2">
+                                        <label className="cursor-pointer px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+                                            {termsFile ? 'Change File' : 'Upload File'}
+                                            <input type="file" accept=".pdf,.doc,.docx,.txt" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) setTermsFile(f); }} />
+                                        </label>
+                                        {termsFile && <span className="text-xs text-green-600">{termsFile.name}</span>}
+                                        {!termsFile && profileData.terms_conditions_file && <span className="text-xs text-gray-500">File uploaded</span>}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4">
+                                <label className="sm:w-20 text-sm font-medium text-gray-700 shrink-0 pt-2">Delivery Terms</label>
+                                <textarea value={profileDeliveryTerms} onChange={(e) => setProfileDeliveryTerms(e.target.value)} placeholder="Delivery terms" rows={2} className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400 resize-none" />
                             </div>
                         </div>
 
