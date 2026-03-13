@@ -46,11 +46,12 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id', 'email', 'first_name', 'last_name', 'full_name',
-            'phone', 'company', 'job_title', 'role', 'avatar',
+            'phone', 'company', 'job_title', 'role', 'subscription_tier', 'avatar',
             'gst_number', 'company_address', 'delivery_address',
             'contact_points', 'terms_conditions', 'terms_conditions_file',
             'delivery_terms',
             'is_email_verified', 'is_active', 'created_at', 'updated_at',
+            'stripe_account_id', 'stripe_customer_id', 'stripe_onboarding_complete',
         ]
         read_only_fields = ['id', 'email', 'role', 'is_email_verified', 'created_at', 'updated_at']
 

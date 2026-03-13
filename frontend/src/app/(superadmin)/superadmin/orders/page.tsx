@@ -8,6 +8,7 @@ const API_BASE = 'http://127.0.0.1:8000/api/superadmin';
 interface Order {
     id: number;
     user_name: string;
+    seller_name: string;
     product_name: string;
     category: string;
     brand: string;
@@ -16,6 +17,8 @@ interface Order {
     quantity: string;
     quantity_unit: string;
     price_per_unit: string;
+    total_price: string;
+    platform_commission: string;
     batch_number: string;
     expiry: string | null;
     shelf_life: string;
@@ -53,7 +56,9 @@ function ViewModal({ order, onClose }: { order: Order; onClose: () => void }) {
                 {order.expiry && <div className="flex items-center justify-between py-1.5"><span className="text-sm text-gray-500">Expiry :</span><span className="text-sm text-gray-700">{order.expiry}</span></div>}
                 {order.shelf_life && <div className="flex items-center justify-between py-1.5"><span className="text-sm text-gray-500">Shelf Life :</span><span className="text-sm text-gray-700">{order.shelf_life}</span></div>}
                 <hr className="border-gray-100 mt-3 mb-4" />
-                <div className="flex items-center justify-between"><span className="text-sm font-bold text-gray-800">Price</span><span className="text-sm font-bold text-green-600">${order.price_per_unit}/{order.quantity_unit}</span></div>
+                <div className="flex items-center justify-between py-1"><span className="text-sm font-bold text-gray-800">Unit Price</span><span className="text-sm font-bold text-gray-800">${order.price_per_unit}/{order.quantity_unit}</span></div>
+                <div className="flex items-center justify-between py-1"><span className="text-sm font-bold text-gray-800">Total Price</span><span className="text-sm font-bold text-gray-800">${order.total_price}</span></div>
+                <div className="flex items-center justify-between py-1 mt-2 bg-green-50 p-2 rounded"><span className="text-sm font-bold text-green-800">Platform Commission</span><span className="text-sm font-bold text-green-700">+${order.platform_commission}</span></div>
             </div>
         </div>
     );
@@ -120,11 +125,11 @@ export default function OrdersPage() {
                         <thead>
                             <tr className="border-b border-gray-100">
                                 <th className="text-left px-6 py-5 text-gray-500 font-medium">SL no.</th>
-                                <th className="text-left px-4 py-5 text-gray-500 font-medium">Full Name</th>
+                                <th className="text-left px-4 py-5 text-gray-500 font-medium">Buyer</th>
+                                <th className="text-left px-4 py-5 text-gray-500 font-medium">Seller</th>
                                 <th className="text-left px-4 py-5 text-gray-500 font-medium">Order</th>
-                                <th className="text-left px-4 py-5 text-gray-500 font-medium">Phone Number</th>
-                                <th className="text-left px-4 py-5 text-gray-500 font-medium">Location</th>
                                 <th className="text-left px-4 py-5 text-gray-500 font-medium">Quantity</th>
+                                <th className="text-left px-4 py-5 text-gray-500 font-medium">Platform Fee</th>
                                 <th className="text-left px-4 py-5 text-gray-500 font-medium">Status</th>
                                 <th className="text-left px-4 py-5 text-gray-500 font-medium">Switch</th>
                                 <th className="text-right px-6 py-5 text-gray-500 font-medium">Action</th>
@@ -137,10 +142,10 @@ export default function OrdersPage() {
                                 <tr key={order.id} className="border-b border-gray-50 hover:bg-gray-50/50">
                                     <td className="px-6 py-4 text-gray-700">#{order.id}</td>
                                     <td className="px-4 py-4 text-gray-800 font-medium whitespace-nowrap">{order.user_name}</td>
+                                    <td className="px-4 py-4 text-gray-800 font-medium whitespace-nowrap">{order.seller_name || 'N/A'}</td>
                                     <td className="px-4 py-4 text-gray-600 whitespace-nowrap">{order.product_name}</td>
-                                    <td className="px-4 py-4 text-gray-600 whitespace-nowrap">{order.phone}</td>
-                                    <td className="px-4 py-4 text-gray-600 whitespace-nowrap">{order.location}</td>
                                     <td className="px-4 py-4 text-gray-600 whitespace-nowrap">{order.quantity} {order.quantity_unit}</td>
+                                    <td className="px-4 py-4 text-green-600 font-semibold whitespace-nowrap">+${order.platform_commission}</td>
                                     <td className="px-4 py-4">
                                         <select
                                             value={order.status}

@@ -31,6 +31,35 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
     const [loading, setLoading] = useState(true);
     const [showOrderSummary, setShowOrderSummary] = useState(false);
     const [quantity, setQuantity] = useState(1000);
+    const [checkoutLoading, setCheckoutLoading] = useState(false);
+
+    const handleCheckout = async () => {
+        if (!product) return;
+        setCheckoutLoading(true);
+        try {
+            const token = localStorage.getItem('access_token');
+            const res = await fetch(`${API_BASE}/checkout/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ listing_id: product.id, quantity: quantity })
+            });
+            const data = await res.json();
+            if (res.ok && data.checkout_url) {
+                window.location.href = data.checkout_url;
+            } else {
+                console.error('Checkout failed', data);
+                alert(data.error || 'Checkout failed');
+            }
+        } catch (error) {
+            console.error('Checkout error:', error);
+            alert('Something went wrong during checkout.');
+        } finally {
+            setCheckoutLoading(false);
+        }
+    };
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -139,7 +168,12 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
                                         <span className="text-[#0E3B1F] font-bold text-lg">${product.price}/{product.price_unit}</span>
                                     </div>
                                     <div className="space-y-3 pt-1">
-                                        <button className="w-full bg-[#1a2e22] text-white py-3.5 rounded-xl font-semibold text-base hover:bg-[#2d5a45]">Continue To Payment</button>
+                                        <button 
+                                            onClick={handleCheckout} 
+                                            disabled={checkoutLoading}
+                                            className="w-full bg-[#1a2e22] text-white py-3.5 rounded-xl font-semibold text-base hover:bg-[#2d5a45] disabled:opacity-50 disabled:cursor-not-allowed">
+                                            {checkoutLoading ? 'Processing...' : 'Continue To Payment'}
+                                        </button>
                                         <button onClick={() => setShowOrderSummary(false)} className="w-full border border-gray-300 text-gray-700 py-3.5 rounded-xl font-semibold text-base hover:bg-gray-50">Back To Marketplace</button>
                                     </div>
                                 </div>

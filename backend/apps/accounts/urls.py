@@ -16,8 +16,14 @@ urlpatterns = [
     path('profile/', views.ProfileView.as_view(), name='profile'),
     path('change-password/', views.ChangePasswordView.as_view(), name='change-password'),
 
-    # OTP & Password Reset
     path('send-otp/', views.SendOTPView.as_view(), name='send-otp'),
     path('verify-otp/', views.VerifyOTPView.as_view(), name='verify-otp'),
     path('reset-password/', views.ResetPasswordView.as_view(), name='reset-password'),
+
+    # Subscription
+    path('subscribe/', views.SubscriptionCheckoutView.as_view(), name='subscribe'),
+
+    # Stripe Connect
+    path('stripe-connect/', views.StripeConnectLinkView.as_view(), name='stripe-connect'),
+    path('stripe-verify/', views.StripeConnectVerifyView.as_view(), name='stripe-verify'),
 ]

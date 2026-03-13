@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Search, Pencil, Trash2, X, Upload, FileText, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react';
+import { Search, Pencil, Trash2, X, Upload, FileText, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, ImageIcon, Crown } from 'lucide-react';
 
 interface POLItem {
     id: number;
@@ -58,6 +58,7 @@ export default function TrackerPage() {
     const [uploadStatus, setUploadStatus] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [editingItem, setEditingItem] = useState<POLItem | null>(null);
+    const [userTier, setUserTier] = useState<string>('basic');
     const [showOptional, setShowOptional] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [imageFile, setImageFile] = useState<File | null>(null);
@@ -120,7 +121,16 @@ export default function TrackerPage() {
         }
     }, []);
 
-    useEffect(() => { fetchPols(); }, [fetchPols]);
+    useEffect(() => { 
+        fetchPols(); 
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            try {
+                const userObj = JSON.parse(userStr);
+                if (userObj.subscription_tier) setUserTier(userObj.subscription_tier);
+            } catch (e) { }
+        }
+    }, [fetchPols]);
 
     const filteredPols = pols.filter((item) => {
         const q = searchQuery.toLowerCase();
@@ -381,10 +391,23 @@ export default function TrackerPage() {
             )}
 
             <div className="mt-8 flex flex-wrap gap-4">
-                <button onClick={() => setIsUploadModalOpen(true)}
-                    className="bg-[#0E3B1F] text-white px-8 py-3 rounded-lg font-medium hover:bg-[#0E3B1F]/90 transition-colors flex items-center gap-2">
-                    <Upload className="w-4 h-4" /> Upload File
-                </button>
+                {userTier !== 'basic' ? (
+                    <button onClick={() => setIsUploadModalOpen(true)}
+                        className="bg-[#0E3B1F] text-white px-8 py-3 rounded-lg font-medium hover:bg-[#0E3B1F]/90 transition-colors flex items-center gap-2">
+                        <Upload className="w-4 h-4" /> Upload File
+                    </button>
+                ) : (
+                    <div className="relative group flex items-center">
+                        <button disabled
+                            className="bg-gray-300 text-white px-8 py-3 rounded-lg font-medium flex items-center gap-2 cursor-not-allowed">
+                            <Upload className="w-4 h-4" /> Upload File
+                            <Crown className="w-4 h-4 ml-1 text-yellow-500" />
+                        </button>
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+                            Upgrade to Business or Premium to use Bulk Upload
+                        </div>
+                    </div>
+                )}
                 <button onClick={() => { resetForm(); setIsModalOpen(true); }}
                     className="bg-[#0E3B1F] text-white px-8 py-3 rounded-lg font-medium hover:bg-[#0E3B1F]/90 transition-colors">
                     + Add New POL

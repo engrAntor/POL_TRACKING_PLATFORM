@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { MapPin, Filter, ChevronDown, Sparkles, X, Send, MessageSquareText, Minus, Plus, Upload, FileText, Download } from 'lucide-react';
+
+import { MapPin, Filter, ChevronDown, Sparkles, X, Send, MessageSquareText, Minus, Plus, Upload, FileText, Download, Crown } from 'lucide-react';
 
 const API_BASE = 'http://127.0.0.1:8000/api/marketplace';
 
@@ -48,6 +49,7 @@ export default function MarketplacePage() {
 
     const [selectedProduct, setSelectedProduct] = useState<Listing | null>(null);
     const [orderSuccess, setOrderSuccess] = useState<string | null>(null);
+    const [paymentToast, setPaymentToast] = useState<string | null>(null);
 
     // Sell form state
     const [sellPrice, setSellPrice] = useState('');
@@ -59,6 +61,7 @@ export default function MarketplacePage() {
     const [sellSdsFile, setSellSdsFile] = useState<File | null>(null);
 
     const [isChatOpen, setIsChatOpen] = useState(false);
+    const [userTier, setUserTier] = useState<string>('basic');
     const [chatInput, setChatInput] = useState('');
     const [messages, setMessages] = useState([
         { id: 1, text: "Hello! I am Lilian. How can I help you today? You can ask me to add inventory or find products in the marketplace.", sender: 'ai' }
@@ -99,7 +102,66 @@ export default function MarketplacePage() {
         }
     }, [polType, location]);
 
-    useEffect(() => { fetchListings(); }, [fetchListings]);
+    useEffect(() => { 
+        fetchListings(); 
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            try {
+                const userObj = JSON.parse(userStr);
+                if (userObj.subscription_tier) setUserTier(userObj.subscription_tier);
+            } catch (e) { }
+        }
+
+        // Auto-refresh listings when user returns to this tab
+        const onVisible = () => { if (!document.hidden) fetchListings(); };
+        document.addEventListener('visibilitychange', onVisible);
+        // Also poll every 30 seconds for real-time updates
+        const interval = setInterval(fetchListings, 30000);
+        return () => {
+            document.removeEventListener('visibilitychange', onVisible);
+            clearInterval(interval);
+        };
+    }, [fetchListings]);
+
+    // Separate effect: runs once on mount to detect Stripe redirect result
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const payment = params.get('payment');
+        const sessionId = params.get('session_id');
+        if (payment === 'success') {
+            window.history.replaceState({}, '', '/marketplace');
+            setPaymentToast('✅ Payment successful! Your order has been placed.');
+            setTimeout(() => setPaymentToast(null), 6000);
+            // Call verify-payment to mark the listing as sold
+            if (sessionId) {
+                const token = localStorage.getItem('access_token');
+                fetch('http://127.0.0.1:8000/api/marketplace/verify-payment/', {
+                    method: 'POST',
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ session_id: sessionId }),
+                }).then(async (res) => {
+                    const data = await res.json().catch(() => ({}));
+                    const soldListingId = data.listing_id;
+                    // Immediately remove from local state so seller table updates right away
+                    if (soldListingId) {
+                        setListings(prev => prev.filter(l => l.id !== soldListingId));
+                        setMyListings(prev => prev.filter(l => l.id !== soldListingId));
+                    }
+                    // Also re-fetch after a short delay to sync with server
+                    setTimeout(() => fetchListings(), 600);
+                }).catch(() => {
+                    setTimeout(() => fetchListings(), 600);
+                });
+            }
+        } else if (payment === 'cancelled') {
+            setPaymentToast('❌ Payment was cancelled.');
+            window.history.replaceState({}, '', '/marketplace');
+            setTimeout(() => setPaymentToast(null), 3000);
+        }
+    }, [fetchListings]);
     useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
     const sendMessage = () => {
@@ -229,6 +291,14 @@ export default function MarketplacePage() {
 
     return (
         <div className="space-y-6">
+            {/* Payment Toast */}
+            {paymentToast && (
+                <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-xl shadow-xl text-sm font-semibold ${
+                    paymentToast.includes('✅') ? 'bg-green-600 text-white' : 'bg-gray-800 text-white'
+                }`}>
+                    {paymentToast}
+                </div>
+            )}
             {/* Hero Section */}
             <div className="bg-gradient-to-r from-[#1a2e22] to-[#2d5a45] rounded-2xl p-8 text-white relative overflow-hidden shadow-xl">
                 <div className="relative z-10">
@@ -320,10 +390,16 @@ export default function MarketplacePage() {
                                 </div>
                             </div>
                             {product._tab === 'buy' ? (
-                                <button onClick={() => { setSelectedProduct(product); setOrderSuccess(null); }}
-                                    className="block w-full text-center bg-[#0E3B1F] text-white py-3 rounded-lg font-medium hover:bg-[#0E3B1F]/90 transition-colors shadow-lg shadow-green-900/10">
-                                    Purchase Now
-                                </button>
+                                product.status === 'sold' ? (
+                                    <div className="block w-full text-center bg-gray-200 text-gray-500 py-3 rounded-lg font-medium cursor-not-allowed">
+                                        ✓ Sold
+                                    </div>
+                                ) : (
+                                    <button onClick={() => { setSelectedProduct(product); setOrderSuccess(null); }}
+                                        className="block w-full text-center bg-[#0E3B1F] text-white py-3 rounded-lg font-medium hover:bg-[#0E3B1F]/90 transition-colors shadow-lg shadow-green-900/10">
+                                        Purchase Now
+                                    </button>
+                                )
                             ) : product.is_inventory ? (
                                 <button onClick={() => openSellModal(product)}
                                     className="block w-full text-center bg-[#0E3B1F] text-white py-3 rounded-lg font-medium hover:bg-[#0B2E18] shadow-lg shadow-green-900/10">
@@ -465,7 +541,7 @@ export default function MarketplacePage() {
 
             {/* AI Chat Widget */}
             <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
-                {isChatOpen && (
+                {isChatOpen && userTier === 'premium' && (
                     <div className="mb-4 w-[380px] bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden flex flex-col" style={{ height: '500px' }}>
                         <div className="bg-[#1a2e22] px-4 py-3 flex items-center gap-3">
                             <div className="w-12 h-12 bg-[#0d1a10] rounded-xl flex items-center justify-center shadow-lg shadow-green-900/40 border border-green-900/30"><Sparkles className="w-6 h-6 text-green-400" /></div>
@@ -492,9 +568,22 @@ export default function MarketplacePage() {
                         </div>
                     </div>
                 )}
-                <div className="w-16 h-16 rounded-full bg-[#b7e4c7]/50 flex items-center justify-center">
-                    <button onClick={() => setIsChatOpen(!isChatOpen)} className="w-12 h-12 bg-[#d8f3dc] rounded-full flex items-center justify-center shadow-sm hover:bg-[#c2ebd0]"><MessageSquareText className="w-6 h-6 text-[#2d6a4f]" /></button>
-                </div>
+                {userTier === 'premium' ? (
+                    <div className="w-16 h-16 rounded-full bg-[#b7e4c7]/50 flex items-center justify-center">
+                        <button onClick={() => setIsChatOpen(!isChatOpen)} className="w-12 h-12 bg-[#d8f3dc] rounded-full flex items-center justify-center shadow-sm hover:bg-[#c2ebd0]"><MessageSquareText className="w-6 h-6 text-[#2d6a4f]" /></button>
+                    </div>
+                ) : (
+                    <div className="relative group">
+                        <div className="w-16 h-16 rounded-full bg-gray-200/50 flex items-center justify-center">
+                            <button disabled className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center shadow-sm cursor-not-allowed">
+                                <Crown className="w-6 h-6 text-yellow-500" />
+                            </button>
+                        </div>
+                        <div className="absolute bottom-full right-0 mb-2 w-48 bg-gray-900 text-white text-xs text-center p-2 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
+                            Upgrade to Premium to unlock Lilian AI Manual Matching
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

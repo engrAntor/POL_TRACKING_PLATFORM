@@ -6,11 +6,12 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
     LayoutGrid, Activity, ShoppingCart, Bell, Menu, X,
     ClipboardList, HeadphonesIcon, ChevronRight, Eye, EyeOff,
-    LogOut,
+    LogOut, Crown
 } from 'lucide-react';
 
 const menuItems = [
     { name: 'Overview',         href: '/overview',       icon: LayoutGrid      },
+    { name: 'Subscription',     href: '/subscription',   icon: Crown           },
     { name: 'Usage Tracker',    href: '/tracker',        icon: Activity        },
     { name: 'Marketplace',      href: '/marketplace',    icon: ShoppingCart    },
     { name: 'Inventory',        href: '/inventory',      icon: ClipboardList   },
@@ -82,6 +83,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const [profileTerms, setProfileTerms] = useState('');
     const [termsFile, setTermsFile] = useState<File | null>(null);
     const [profileDeliveryTerms, setProfileDeliveryTerms] = useState('');
+    const [stripeOnboardingComplete, setStripeOnboardingComplete] = useState(false);
+    const [stripeConnecting, setStripeConnecting] = useState(false);
+    
     const [profileSaving, setProfileSaving] = useState(false);
     const [profileMsg, setProfileMsg] = useState('');
 
@@ -141,6 +145,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 setProfileContactPoints(data.contact_points || '');
                 setProfileTerms(data.terms_conditions || '');
                 setProfileDeliveryTerms(data.delivery_terms || '');
+                setStripeOnboardingComplete(data.stripe_onboarding_complete || false);
             }
         } catch { /* silent */ }
     }, []);
@@ -258,6 +263,38 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         router.replace("/login");
     };
 
+    const handleConnectStripe = async () => {
+        setStripeConnecting(true);
+        setProfileMsg('');
+        const token = localStorage.getItem('access_token');
+        if (!token) { setProfileMsg('Not authenticated.'); setStripeConnecting(false); return; }
+        
+        try {
+            const res = await fetch(`${API_AUTH}/stripe-connect/`, {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.url) {
+                    window.location.href = data.url;
+                } else {
+                    setProfileMsg('Failed to get Stripe URL.');
+                }
+            } else {
+                const errData = await res.json().catch(() => ({}));
+                setProfileMsg(errData.error || 'Failed to connect Stripe.');
+            }
+        } catch {
+            setProfileMsg('Network error connecting to Stripe.');
+        } finally {
+            setStripeConnecting(false);
+        }
+    };
+
     return (
         <div className="flex h-screen min-h-0 bg-gray-50 overflow-hidden">
             {/* Mobile Sidebar Overlay */}
@@ -337,6 +374,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         </button>
                         <h1 className="text-lg lg:text-xl font-semibold text-gray-900 truncate">
                             {pathname === '/overview'      ? 'Dashboard'        :
+                             pathname === '/subscription'  ? 'Subscription'     :
                              pathname === '/tracker'       ? 'Tracker'          :
                              pathname === '/marketplace'   ? 'Marketplace'      :
                              pathname === '/notifications' ? 'AI Notifications' :
@@ -517,6 +555,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
                                 <label className="sm:w-20 text-sm font-medium text-gray-700 shrink-0">Job Title</label>
                                 <input type="text" value={profileJobTitle} onChange={(e) => setProfileJobTitle(e.target.value)} placeholder="Job title" className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-gray-400" />
+                            </div>
+
+                            <div className="border-t border-gray-200 my-2" />
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Payouts</p>
+                            
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                                <label className="sm:w-20 text-sm font-medium text-gray-700 shrink-0">Stripe Integration</label>
+                                <div className="flex items-center gap-3 flex-1">
+                                    {stripeOnboardingComplete ? (
+                                        <div className="px-3 py-1.5 rounded-lg border border-green-200 bg-green-50 text-xs font-semibold text-green-700">
+                                            ✓ Connected
+                                        </div>
+                                    ) : (
+                                        <button
+                                            onClick={handleConnectStripe}
+                                            disabled={stripeConnecting}
+                                            className="px-4 py-1.5 rounded-lg text-xs font-medium text-white transition-colors disabled:opacity-50"
+                                            style={{ background: '#635BFF' }}
+                                        >
+                                            {stripeConnecting ? 'Connecting...' : 'Connect Stripe'}
+                                        </button>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="border-t border-gray-200 my-2" />

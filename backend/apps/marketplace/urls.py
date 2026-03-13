@@ -17,6 +17,8 @@ urlpatterns = [
     path('listings/<int:pk>/remove/', views.ListingRemoveView.as_view(), name='listing-remove'),
     path('listings/<int:pk>/delete/', views.ListingDeleteView.as_view(), name='listing-delete'),
 
-    # Stripe Checkout
+    # Stripe Checkout & Webhook
     path('checkout/', views.CreateCheckoutSessionView.as_view(), name='create-checkout'),
+    path('verify-payment/', views.VerifyPaymentView.as_view(), name='verify-payment'),
+    path('webhook/', views.StripeWebhookView.as_view(), name='stripe-webhook'),
 ]

@@ -10,6 +10,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework_simplejwt.tokens import RefreshToken
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
+import stripe
 
 from .models import User, OTP, EmailVerificationToken
 from .tasks import send_verification_email, send_otp_email
@@ -439,3 +440,123 @@ class TokenRefreshView(APIView):
                 {'error': 'Invalid or expired refresh token.'},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
+
+
+# ── Subscription Checkout ────────────────────────────────────────────────────
+stripe.api_key = settings.STRIPE_SECRET_KEY
+
+class SubscriptionCheckoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        tier_id = request.data.get('tier_id')
+        
+        # Define prices manually (or retrieve from Stripe Products in a real scenario)
+        tier_prices = {
+            'basic': 29,
+            'business': 99,
+            'premium': 299,
+        }
+        
+        if tier_id not in tier_prices:
+            return Response(
+                {'error': 'Invalid subscription tier.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        frontend_url = settings.FRONTEND_URL
+        price_cents = tier_prices[tier_id] * 100
+
+        try:
+            session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=[{
+                    'price_data': {
+                        'currency': 'usd',
+                        'product_data': {
+                            'name': f'POL Tracking - {tier_id.capitalize()} Tier',
+                            'description': f'Monthly subscription for {tier_id.capitalize()} tier',
+                        },
+                        'unit_amount': price_cents,
+                        # Set recurring to true for actual subscriptions, or leave unit_amount for 1-time testing
+                        # 'recurring': {'interval': 'month'}
+                    },
+                    'quantity': 1,
+                }],
+                # use 'subscription' mode if recurring
+                mode='payment', 
+                success_url=f'{frontend_url}/subscription?payment=success&tier={tier_id}',
+                cancel_url=f'{frontend_url}/subscription?payment=cancelled',
+                metadata={
+                    'user_id': str(request.user.id),
+                    'tier_id': tier_id,
+                    'type': 'subscription_upgrade'
+                },
+            )
+            return Response({'checkout_url': session.url})
+        except stripe.error.StripeError as e:
+            print("Stripe Error (Subscription):", str(e))
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+
+# ── Stripe Connect Onboarding ────────────────────────────────────────────────
+class StripeConnectLinkView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        frontend_url = settings.FRONTEND_URL
+
+        # 1. Ensure user has a stripe_account_id
+        if not user.stripe_account_id:
+            try:
+                account = stripe.Account.create(
+                    type='express',
+                    email=user.email,
+                )
+                user.stripe_account_id = account.id
+                user.save()
+            except Exception as e:
+                err_msg = getattr(e, 'user_message', str(e))
+                print("Stripe Account.create error:", repr(e))
+                return Response({'error': err_msg}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 2. Generate AccountLink URL
+        try:
+            account_link = stripe.AccountLink.create(
+                account=user.stripe_account_id,
+                refresh_url=f"{frontend_url}/stripe-return?refresh=true",
+                return_url=f"{frontend_url}/stripe-return?success=true",
+                type="account_onboarding",
+            )
+            return Response({'url': account_link.url})
+        except Exception as e:
+            err_msg = getattr(e, 'user_message', str(e))
+            print("Stripe AccountLink.create error:", repr(e))
+            return Response({'error': err_msg}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StripeConnectVerifyView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        if not user.stripe_account_id:
+            return Response({'error': 'No Stripe account linked.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            account = stripe.Account.retrieve(user.stripe_account_id)
+            if account.details_submitted and account.charges_enabled and account.payouts_enabled:
+                user.stripe_onboarding_complete = True
+                user.save()
+                return Response({'status': 'complete', 'message': 'Stripe onboarding successful.'})
+            else:
+                user.stripe_onboarding_complete = False
+                user.save()
+                return Response({'status': 'incomplete', 'message': 'Stripe onboarding is incomplete.'})
+        except stripe.error.StripeError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

@@ -22,6 +22,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='admin')
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
 
+    # Subscriptions
+    subscription_tier = models.CharField(
+        max_length=20, 
+        choices=(('basic', 'Basic'), ('business', 'Business'), ('premium', 'Premium')), 
+        default='basic'
+    )
+
     # Extra profile fields (one-time fill)
     gst_number = models.CharField(max_length=50, blank=True)
     company_address = models.TextField(blank=True)
@@ -36,6 +43,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    # Stripe integration fields
+    stripe_account_id = models.CharField(max_length=100, blank=True, null=True, help_text="User's Selling ID (Connect Account - acct_XXXX)")
+    stripe_customer_id = models.CharField(max_length=100, blank=True, null=True, help_text="User's Buying ID (Customer ID - cus_XXXX)")
+    stripe_onboarding_complete = models.BooleanField(default=False, help_text="True if Connect onboarding is finished")
 
     objects = UserManager()
 

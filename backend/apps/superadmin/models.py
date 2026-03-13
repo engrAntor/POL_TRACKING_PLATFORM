@@ -34,6 +34,18 @@ class Order(models.Model):
         on_delete=models.CASCADE,
         related_name='orders',
     )
+    seller = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='sales',
+        null=True, blank=True,
+    )
+    listing = models.ForeignKey(
+        'marketplace.Listing',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='orders',
+    )
     product_name = models.CharField(max_length=200)
     category = models.CharField(max_length=50, default='Petroleum')
     brand = models.CharField(max_length=100, blank=True)
@@ -42,6 +54,8 @@ class Order(models.Model):
     quantity = models.DecimalField(max_digits=10, decimal_places=2)
     quantity_unit = models.CharField(max_length=20, default='liter')
     price_per_unit = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    platform_commission = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     batch_number = models.CharField(max_length=50, blank=True)
     expiry = models.DateField(null=True, blank=True)
     shelf_life = models.CharField(max_length=50, blank=True)
