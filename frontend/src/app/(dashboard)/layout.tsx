@@ -85,6 +85,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const [profileDeliveryTerms, setProfileDeliveryTerms] = useState('');
     const [stripeOnboardingComplete, setStripeOnboardingComplete] = useState(false);
     const [stripeConnecting, setStripeConnecting] = useState(false);
+    const [subscriptionTier, setSubscriptionTier] = useState<string>('basic');
     
     const [profileSaving, setProfileSaving] = useState(false);
     const [profileMsg, setProfileMsg] = useState('');
@@ -146,6 +147,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 setProfileTerms(data.terms_conditions || '');
                 setProfileDeliveryTerms(data.delivery_terms || '');
                 setStripeOnboardingComplete(data.stripe_onboarding_complete || false);
+                setSubscriptionTier(data.subscription_tier || 'basic');
             }
         } catch { /* silent */ }
     }, []);
@@ -452,11 +454,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                             />
                                         </div>
                                         <p className="text-sm font-semibold text-gray-900">{profileData.first_name} {profileData.last_name}</p>
+                                        {/* Subscription tier badge */}
                                         <span
                                             className="mt-1 px-3 py-0.5 rounded-full text-xs font-medium text-white"
-                                            style={{ background: '#0E3B1F' }}
+                                            style={{
+                                                background: subscriptionTier === 'premium' ? '#7C3AED'
+                                                          : subscriptionTier === 'business' ? '#0E3B1F'
+                                                          : '#3B82F6'
+                                            }}
                                         >
-                                            Admin
+                                            {subscriptionTier === 'premium' ? '👑 Premium'
+                                             : subscriptionTier === 'business' ? '⚡ Business'
+                                             : '🛡 Basic'}
                                         </span>
                                     </div>
 

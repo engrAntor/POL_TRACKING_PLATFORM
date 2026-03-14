@@ -19,11 +19,11 @@ import {
 } from 'lucide-react';
 
 const menuItems = [
-    { name: 'DashBoard',       href: '/superadmin/overview',        icon: LayoutDashboard },
-    { name: 'User Management', href: '/superadmin/users',           icon: Users           },
-    { name: 'Administrators',  href: '/superadmin/administrators',  icon: ShieldCheck     },
-    { name: 'Order',           href: '/superadmin/orders',          icon: ShoppingBag     },
-    { name: 'User Issues',     href: '/superadmin/issues',          icon: AlertTriangle   },
+    { name: 'DashBoard', href: '/superadmin/overview', icon: LayoutDashboard },
+    { name: 'User Management', href: '/superadmin/users', icon: Users },
+    { name: 'Administrators', href: '/superadmin/administrators', icon: ShieldCheck },
+    { name: 'Order', href: '/superadmin/orders', icon: ShoppingBag },
+    { name: 'User Issues', href: '/superadmin/issues', icon: AlertTriangle },
 ];
 
 // ── Password input with show/hide ─────────────────────────────────────────────
@@ -59,9 +59,9 @@ const avatarUrl = (url?: string | null) => {
 };
 
 export default function SuperAdminLayout({ children }: { children: React.ReactNode }) {
-    const router   = useRouter();
+    const router = useRouter();
     const pathname = usePathname();
-    const [authorized, setAuthorized]   = useState(false);
+    const [authorized, setAuthorized] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     // Profile panel
@@ -73,7 +73,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
     const notifRef = useRef<HTMLDivElement>(null);
 
     // Modals
-    const [showAccount,  setShowAccount]  = useState(false);
+    const [showAccount, setShowAccount] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
     // Profile data
@@ -98,8 +98,8 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
     const [pwMsg, setPwMsg] = useState('');
 
     // Password show/hide
-    const [showOldPw,     setShowOldPw]     = useState(false);
-    const [showNewPw,     setShowNewPw]     = useState(false);
+    const [showOldPw, setShowOldPw] = useState(false);
+    const [showNewPw, setShowNewPw] = useState(false);
     const [showConfirmPw, setShowConfirmPw] = useState(false);
 
     // Bell notifications
@@ -331,11 +331,10 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
                                 key={item.name}
                                 href={item.href}
                                 onClick={() => setIsSidebarOpen(false)}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 ${
-                                    isActive
+                                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 ${isActive
                                         ? 'text-white shadow-sm'
                                         : 'text-white/65 hover:text-white hover:bg-white/10'
-                                }`}
+                                    }`}
                                 style={isActive ? { background: '#2d5a3d' } : {}}
                             >
                                 <Icon className="w-[18px] h-[18px] shrink-0" />
@@ -370,11 +369,11 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
                             <Menu className="h-6 w-6" />
                         </button>
                         <h1 className="text-base lg:text-xl font-semibold text-gray-900 truncate">
-                            {pathname === '/superadmin/overview'       ? 'Dashboard'       :
-                             pathname === '/superadmin/users'          ? 'User Management' :
-                             pathname === '/superadmin/administrators' ? 'Administrators'  :
-                             pathname === '/superadmin/orders'         ? 'Order'           :
-                             pathname === '/superadmin/issues'         ? 'User Issues'     : 'Dashboard'}
+                            {pathname === '/superadmin/overview' ? 'Dashboard' :
+                                pathname === '/superadmin/users' ? 'User Management' :
+                                    pathname === '/superadmin/administrators' ? 'Administrators' :
+                                        pathname === '/superadmin/orders' ? 'Order' :
+                                            pathname === '/superadmin/issues' ? 'User Issues' : 'Dashboard'}
                         </h1>
                     </div>
 
@@ -587,8 +586,8 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
                         <h2 className="text-center text-lg font-bold text-gray-900 mb-7">Change Password</h2>
 
                         <div className="space-y-4">
-                            <PwInput label="Old Password"         show={showOldPw}     onToggle={() => setShowOldPw((v) => !v)}     value={oldPw}     onChange={setOldPw}     />
-                            <PwInput label="New Password"         show={showNewPw}     onToggle={() => setShowNewPw((v) => !v)}     value={newPw}     onChange={setNewPw}     />
+                            <PwInput label="Old Password" show={showOldPw} onToggle={() => setShowOldPw((v) => !v)} value={oldPw} onChange={setOldPw} />
+                            <PwInput label="New Password" show={showNewPw} onToggle={() => setShowNewPw((v) => !v)} value={newPw} onChange={setNewPw} />
                             <PwInput label="Re Type New Password" show={showConfirmPw} onToggle={() => setShowConfirmPw((v) => !v)} value={confirmPw} onChange={setConfirmPw} />
                         </div>
 

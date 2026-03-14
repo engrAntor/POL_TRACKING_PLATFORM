@@ -449,6 +449,13 @@ class SubscriptionCheckoutView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        # Guard: user must have completed Stripe onboarding
+        if not getattr(request.user, 'stripe_onboarding_complete', False):
+            return Response(
+                {'error': 'stripe_not_connected'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         tier_id = request.data.get('tier_id')
         
         # Define prices manually (or retrieve from Stripe Products in a real scenario)
@@ -485,7 +492,7 @@ class SubscriptionCheckoutView(APIView):
                 }],
                 # use 'subscription' mode if recurring
                 mode='payment', 
-                success_url=f'{frontend_url}/subscription?payment=success&tier={tier_id}',
+                success_url=f'{frontend_url}/subscription?payment=success&tier={tier_id}&session_id={{CHECKOUT_SESSION_ID}}',
                 cancel_url=f'{frontend_url}/subscription?payment=cancelled',
                 metadata={
                     'user_id': str(request.user.id),
@@ -500,6 +507,46 @@ class SubscriptionCheckoutView(APIView):
                 {'error': str(e)},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+
+# ── Verify Subscription Payment ───────────────────────────────────────────────
+class VerifySubscriptionView(APIView):
+    """
+    Called by the frontend when the user returns from Stripe after subscribing.
+    Validates the session, then updates the user's subscription_tier.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        session_id = request.data.get('session_id')
+        tier_id = request.data.get('tier_id')
+        if not session_id or not tier_id:
+            return Response({'error': 'session_id and tier_id are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        valid_tiers = ['basic', 'business', 'premium']
+        if tier_id not in valid_tiers:
+            return Response({'error': 'Invalid tier.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            session = stripe.checkout.Session.retrieve(session_id)
+        except stripe.error.StripeError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        if session.payment_status != 'paid':
+            return Response({'error': 'Payment not completed.'}, status=status.HTTP_402_PAYMENT_REQUIRED)
+
+        # Double-check that metadata matches
+        meta_user_id = session.metadata.get('user_id')
+        meta_tier = session.metadata.get('tier_id')
+        if meta_tier != tier_id or str(request.user.id) != str(meta_user_id):
+            return Response({'error': 'Metadata mismatch.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Update the user's subscription tier
+        user = request.user
+        user.subscription_tier = tier_id
+        user.save()
+
+        return Response({'status': 'success', 'subscription_tier': user.subscription_tier})
 
 
 # ── Stripe Connect Onboarding ────────────────────────────────────────────────

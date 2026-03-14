@@ -78,6 +78,14 @@ class ListingCreateView(generics.CreateAPIView):
     permission_classes = [IsAdmin]
     serializer_class = ListingCreateSerializer
 
+    def create(self, request, *args, **kwargs):
+        if not getattr(request.user, 'stripe_onboarding_complete', False):
+            return Response(
+                {'error': 'seller_stripe_not_connected'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().create(request, *args, **kwargs)
+
 
 # ── Sell from Inventory ───────────────────────────────────────────────────────
 class SellFromInventoryView(APIView):
@@ -85,6 +93,13 @@ class SellFromInventoryView(APIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def post(self, request):
+        # Guard: seller must have completed Stripe onboarding
+        if not getattr(request.user, 'stripe_onboarding_complete', False):
+            return Response(
+                {'error': 'seller_stripe_not_connected'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         serializer = SellListingSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -178,6 +193,13 @@ class CreateCheckoutSessionView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        # Guard: buyer must have completed Stripe onboarding
+        if not getattr(request.user, 'stripe_onboarding_complete', False):
+            return Response(
+                {'error': 'buyer_stripe_not_connected'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         listing_id = request.data.get('listing_id')
         buyer_qty = request.data.get('quantity')
 
@@ -327,6 +349,41 @@ class VerifyPaymentView(APIView):
                 # 3. Remove the original POLItem from the seller's usage tracker
                 if seller_pol:
                     seller_pol.delete()
+
+                # 4. Create Order record for SuperAdmin dashboard
+                seller = listing.user
+                commission_rate = 0.30  # Default: Basic tier
+                seller_tier = getattr(seller, 'subscription_tier', 'basic')
+                if seller_tier == 'premium':
+                    commission_rate = 0.10
+                elif seller_tier == 'business':
+                    commission_rate = 0.20
+
+                qty = float(listing.quantity) if listing.quantity else 1
+                total_price = float(listing.price or 0) * qty
+                platform_commission = total_price * commission_rate
+
+                Order.objects.get_or_create(
+                    listing=listing,
+                    user=buyer,
+                    defaults=dict(
+                        seller=seller,
+                        product_name=listing.name,
+                        category=listing.pol_type.capitalize(),
+                        brand=listing.company,
+                        phone=getattr(buyer, 'phone_number', ''),
+                        location=listing.location,
+                        quantity=qty,
+                        quantity_unit=listing.quantity_unit,
+                        price_per_unit=listing.price or 0,
+                        total_price=total_price,
+                        platform_commission=platform_commission,
+                        batch_number=listing.batch_number or '',
+                        expiry=listing.expiry,
+                        shelf_life=listing.shelf_life,
+                        status='approved',
+                    )
+                )
 
             return Response({'status': 'sold', 'listing_id': listing.id})
         except Listing.DoesNotExist:

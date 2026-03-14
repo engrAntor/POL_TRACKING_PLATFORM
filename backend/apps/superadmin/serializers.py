@@ -53,7 +53,7 @@ class CreateAdministratorSerializer(serializers.ModelSerializer):
 # ── Orders ────────────────────────────────────────────────────────────────────
 class OrderListSerializer(serializers.ModelSerializer):
     user_name = serializers.CharField(source='user.full_name', read_only=True)
-    seller_name = serializers.CharField(source='seller.company', read_only=True)
+    seller_name = serializers.CharField(source='seller.full_name', read_only=True)
 
     class Meta:
         model = Order

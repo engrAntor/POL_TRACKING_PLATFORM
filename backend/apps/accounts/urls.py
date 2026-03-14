@@ -22,6 +22,7 @@ urlpatterns = [
 
     # Subscription
     path('subscribe/', views.SubscriptionCheckoutView.as_view(), name='subscribe'),
+    path('verify-subscription/', views.VerifySubscriptionView.as_view(), name='verify-subscription'),
 
     # Stripe Connect
     path('stripe-connect/', views.StripeConnectLinkView.as_view(), name='stripe-connect'),

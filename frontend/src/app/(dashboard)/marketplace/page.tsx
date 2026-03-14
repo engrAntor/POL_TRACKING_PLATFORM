@@ -2,9 +2,10 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 
-import { MapPin, Filter, ChevronDown, Sparkles, X, Send, MessageSquareText, Minus, Plus, Upload, FileText, Download, Crown } from 'lucide-react';
+import { MapPin, Filter, ChevronDown, Sparkles, X, Send, MessageSquareText, Minus, Plus, Upload, FileText, Download, Crown, AlertTriangle } from 'lucide-react';
 
 const API_BASE = 'http://127.0.0.1:8000/api/marketplace';
+const API_AUTH = 'http://127.0.0.1:8000/api/auth';
 
 interface Listing {
     id: number;
@@ -62,6 +63,8 @@ export default function MarketplacePage() {
 
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [userTier, setUserTier] = useState<string>('basic');
+    const [stripeConnected, setStripeConnected] = useState(true);
+    const [stripeConnecting, setStripeConnecting] = useState(false);
     const [chatInput, setChatInput] = useState('');
     const [messages, setMessages] = useState([
         { id: 1, text: "Hello! I am Lilian. How can I help you today? You can ask me to add inventory or find products in the marketplace.", sender: 'ai' }
@@ -102,14 +105,31 @@ export default function MarketplacePage() {
         }
     }, [polType, location]);
 
-    useEffect(() => { 
-        fetchListings(); 
+    useEffect(() => {
+        fetchListings();
         const userStr = localStorage.getItem('user');
         if (userStr) {
             try {
                 const userObj = JSON.parse(userStr);
                 if (userObj.subscription_tier) setUserTier(userObj.subscription_tier);
+                if (typeof userObj.stripe_onboarding_complete === 'boolean') {
+                    setStripeConnected(userObj.stripe_onboarding_complete);
+                }
             } catch (e) { }
+        }
+
+        // Fetch live profile to get latest stripe status
+        const token = getToken();
+        if (token) {
+            fetch(`${API_AUTH}/profile/`, { headers: { Authorization: `Bearer ${token}` } })
+                .then(res => res.ok ? res.json() : null)
+                .then(data => {
+                    if (data) {
+                        setStripeConnected(data.stripe_onboarding_complete || false);
+                        if (data.subscription_tier) setUserTier(data.subscription_tier);
+                    }
+                })
+                .catch(() => {});
         }
 
         // Auto-refresh listings when user returns to this tab
@@ -183,10 +203,29 @@ export default function MarketplacePage() {
     };
 
     const [orderLoading, setOrderLoading] = useState(false);
+    const [sellerStripeError, setSellerStripeError] = useState(false);
+
+    const handleConnectStripe = async () => {
+        setStripeConnecting(true);
+        const token = getToken();
+        if (!token) { setStripeConnecting(false); return; }
+        try {
+            const res = await fetch(`${API_AUTH}/stripe-connect/`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.url) window.location.href = data.url;
+            }
+        } catch { /* silent */ }
+        finally { setStripeConnecting(false); }
+    };
 
     const handlePlaceOrder = async () => {
         if (!selectedProduct) return;
         setOrderLoading(true);
+        setSellerStripeError(false);
         try {
             const res = await fetch(`${API_BASE}/checkout/`, {
                 method: 'POST',
@@ -202,6 +241,10 @@ export default function MarketplacePage() {
             const data = await res.json();
             if (res.ok && data.checkout_url) {
                 window.location.href = data.checkout_url;
+            } else if (data.error === 'seller_stripe_not_connected') {
+                setSellerStripeError(true);
+            } else if (data.error === 'buyer_stripe_not_connected') {
+                setStripeConnected(false);
             } else {
                 setOrderSuccess(data.error || 'Failed to start checkout.');
             }
@@ -272,7 +315,11 @@ export default function MarketplacePage() {
                 setTimeout(() => { setSelectedProduct(null); setOrderSuccess(null); setSellPrice(''); setSellLocation(''); setSellDescription(''); setSellSdsFile(null); fetchListings(); }, 2000);
             } else {
                 const data = await res.json();
-                setOrderSuccess(data.error || 'Failed.');
+                if (data.error === 'seller_stripe_not_connected') {
+                    setStripeConnected(false);
+                } else {
+                    setOrderSuccess(data.error || 'Failed.');
+                }
             }
         } catch {
             setOrderSuccess('Network error.');
@@ -293,9 +340,8 @@ export default function MarketplacePage() {
         <div className="space-y-6">
             {/* Payment Toast */}
             {paymentToast && (
-                <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-xl shadow-xl text-sm font-semibold ${
-                    paymentToast.includes('✅') ? 'bg-green-600 text-white' : 'bg-gray-800 text-white'
-                }`}>
+                <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-xl shadow-xl text-sm font-semibold ${paymentToast.includes('✅') ? 'bg-green-600 text-white' : 'bg-gray-800 text-white'
+                    }`}>
                     {paymentToast}
                 </div>
             )}
@@ -395,7 +441,7 @@ export default function MarketplacePage() {
                                         ✓ Sold
                                     </div>
                                 ) : (
-                                    <button onClick={() => { setSelectedProduct(product); setOrderSuccess(null); }}
+                                    <button onClick={() => { setSelectedProduct(product); setOrderSuccess(null); setSellerStripeError(false); }}
                                         className="block w-full text-center bg-[#0E3B1F] text-white py-3 rounded-lg font-medium hover:bg-[#0E3B1F]/90 transition-colors shadow-lg shadow-green-900/10">
                                         Purchase Now
                                     </button>
@@ -472,7 +518,21 @@ export default function MarketplacePage() {
                                         </div>
                                     </div>
                                     <div className="mt-5">
-                                        {orderSuccess ? (
+                                        {!stripeConnected ? (
+                                            <div className="space-y-3">
+                                                <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
+                                                    <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                                                    <div>
+                                                        <p className="text-sm font-semibold text-amber-800">Stripe account required</p>
+                                                        <p className="text-xs text-amber-700 mt-1">Connect your Stripe account to receive payments for your listings.</p>
+                                                    </div>
+                                                </div>
+                                                <button onClick={handleConnectStripe} disabled={stripeConnecting} className="w-full py-3 rounded-xl font-semibold text-white transition-colors disabled:opacity-50" style={{ background: '#635BFF' }}>
+                                                    {stripeConnecting ? 'Connecting...' : 'Connect Stripe'}
+                                                </button>
+                                                <button onClick={() => { setSelectedProduct(null); setSellPrice(''); setSellLocation(''); setSellDescription(''); setSellSdsFile(null); }} className="w-full border border-gray-300 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-50">Cancel</button>
+                                            </div>
+                                        ) : orderSuccess ? (
                                             <div className="w-full bg-green-50 text-green-700 py-3 rounded-xl font-semibold text-center border border-green-200">{orderSuccess}</div>
                                         ) : (
                                             <div className="space-y-3">
@@ -522,7 +582,32 @@ export default function MarketplacePage() {
                                         <span className="font-bold text-gray-900">Price</span>
                                         <span className="text-[#0E3B1F] font-bold">${selectedProduct.price}/{selectedProduct.price_unit || 'Liter'}</span>
                                     </div>
-                                    {orderSuccess ? (
+                                    {!stripeConnected ? (
+                                        <div className="space-y-3">
+                                            <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
+                                                <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                                                <div>
+                                                    <p className="text-sm font-semibold text-amber-800">Stripe account required</p>
+                                                    <p className="text-xs text-amber-700 mt-1">Connect your Stripe account before making purchases.</p>
+                                                </div>
+                                            </div>
+                                            <button onClick={handleConnectStripe} disabled={stripeConnecting} className="w-full py-3 rounded-xl font-semibold text-white transition-colors disabled:opacity-50" style={{ background: '#635BFF' }}>
+                                                {stripeConnecting ? 'Connecting...' : 'Connect Stripe'}
+                                            </button>
+                                            <button onClick={() => setSelectedProduct(null)} className="w-full border border-gray-300 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-50">Back To Marketplace</button>
+                                        </div>
+                                    ) : sellerStripeError ? (
+                                        <div className="space-y-3">
+                                            <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
+                                                <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                                                <div>
+                                                    <p className="text-sm font-semibold text-amber-800">Seller payment not set up</p>
+                                                    <p className="text-xs text-amber-700 mt-1">This seller hasn&apos;t connected their Stripe account yet. Payment cannot be processed until they complete Stripe onboarding.</p>
+                                                </div>
+                                            </div>
+                                            <button onClick={() => setSelectedProduct(null)} className="w-full border border-gray-300 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-50">Back To Marketplace</button>
+                                        </div>
+                                    ) : orderSuccess ? (
                                         <div className="w-full bg-green-50 text-green-700 py-3 rounded-xl font-semibold text-center border border-green-200">{orderSuccess}</div>
                                     ) : (
                                         <div className="space-y-3">

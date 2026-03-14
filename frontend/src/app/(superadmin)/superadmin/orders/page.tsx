@@ -29,14 +29,6 @@ interface Order {
 
 const PAGE_SIZE = 10;
 
-function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
-    return (
-        <button onClick={onToggle} className={`relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none ${on ? "bg-gray-900" : "bg-gray-300"}`}>
-            <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${on ? "translate-x-6" : "translate-x-1"}`} />
-        </button>
-    );
-}
-
 function ViewModal({ order, onClose }: { order: Order; onClose: () => void }) {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
@@ -97,14 +89,6 @@ export default function OrdersPage() {
         fetchOrders();
     };
 
-    const handleToggle = async (orderId: number, isActive: boolean) => {
-        await fetch(`${API_BASE}/orders/${orderId}/toggle/`, {
-            method: 'PATCH',
-            headers: { Authorization: `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ is_active: isActive }),
-        });
-        fetchOrders();
-    };
 
     const handleDelete = async (orderId: number) => {
         if (!confirm('Delete this order?')) return;
@@ -129,22 +113,23 @@ export default function OrdersPage() {
                                 <th className="text-left px-4 py-5 text-gray-500 font-medium">Seller</th>
                                 <th className="text-left px-4 py-5 text-gray-500 font-medium">Order</th>
                                 <th className="text-left px-4 py-5 text-gray-500 font-medium">Quantity</th>
+                                <th className="text-left px-4 py-5 text-gray-500 font-medium">Price</th>
                                 <th className="text-left px-4 py-5 text-gray-500 font-medium">Platform Fee</th>
                                 <th className="text-left px-4 py-5 text-gray-500 font-medium">Status</th>
-                                <th className="text-left px-4 py-5 text-gray-500 font-medium">Switch</th>
                                 <th className="text-right px-6 py-5 text-gray-500 font-medium">Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             {paged.length === 0 ? (
-                                <tr><td colSpan={9} className="px-6 py-8 text-center text-gray-400">No orders found</td></tr>
-                            ) : paged.map((order, i) => (
+                                <tr><td colSpan={8} className="px-6 py-8 text-center text-gray-400">No orders found</td></tr>
+                            ) : paged.map((order) => (
                                 <tr key={order.id} className="border-b border-gray-50 hover:bg-gray-50/50">
                                     <td className="px-6 py-4 text-gray-700">#{order.id}</td>
                                     <td className="px-4 py-4 text-gray-800 font-medium whitespace-nowrap">{order.user_name}</td>
                                     <td className="px-4 py-4 text-gray-800 font-medium whitespace-nowrap">{order.seller_name || 'N/A'}</td>
                                     <td className="px-4 py-4 text-gray-600 whitespace-nowrap">{order.product_name}</td>
                                     <td className="px-4 py-4 text-gray-600 whitespace-nowrap">{order.quantity} {order.quantity_unit}</td>
+                                    <td className="px-4 py-4 text-gray-800 font-semibold whitespace-nowrap">${order.total_price}</td>
                                     <td className="px-4 py-4 text-green-600 font-semibold whitespace-nowrap">+${order.platform_commission}</td>
                                     <td className="px-4 py-4">
                                         <select
@@ -160,9 +145,6 @@ export default function OrdersPage() {
                                             <option value="approved">Approved</option>
                                             <option value="cancelled">Cancelled</option>
                                         </select>
-                                    </td>
-                                    <td className="px-4 py-4">
-                                        <Toggle on={order.is_active} onToggle={() => handleToggle(order.id, !order.is_active)} />
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center justify-end gap-2">

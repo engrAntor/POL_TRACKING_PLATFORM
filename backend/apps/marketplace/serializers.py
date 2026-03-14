@@ -27,6 +27,13 @@ class ListingSerializer(serializers.ModelSerializer):
         return None
 
 
+UOM_LABELS = {
+    'QT': 'Quart', 'OZ': 'Ounce', 'LB': 'Pound', 'RL': 'Roll', 'EA': 'Each',
+    'GAL': 'Gallon', 'ML': 'Millilitre', 'PT': 'Pint', 'KT': 'Kit', 'GM': 'Gram',
+    'FT': 'Feet', 'SQ ST': 'Square Feet', 'YD': 'Yard', 'CC': 'Cubic Centimeter',
+}
+
+
 class InventoryForMarketSerializer(serializers.ModelSerializer):
     """Shape POLItem data to match the Listing interface for the frontend."""
     seller_name = serializers.CharField(source='user.full_name', read_only=True)
@@ -68,7 +75,8 @@ class InventoryForMarketSerializer(serializers.ModelSerializer):
         return None
 
     def get_price_unit(self, obj):
-        return obj.uom or 'Liter'
+        uom = obj.uom or 'GAL'
+        return UOM_LABELS.get(uom, uom)
 
     def get_description(self, obj):
         name = obj.product_name or obj.description[:100]
@@ -81,7 +89,8 @@ class InventoryForMarketSerializer(serializers.ModelSerializer):
         return ''
 
     def get_quantity_unit(self, obj):
-        return obj.uom or 'Units'
+        uom = obj.uom or 'GAL'
+        return UOM_LABELS.get(uom, uom)
 
     def get_rating(self, obj):
         return None
