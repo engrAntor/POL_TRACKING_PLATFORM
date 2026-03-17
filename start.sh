@@ -14,7 +14,7 @@ echo "=========================================="
 
 # 1. Start Docker Desktop (if not running)
 echo ""
-echo "[1/5] Checking Docker Desktop..."
+echo "[1/6] Checking Docker Desktop..."
 if ! docker info > /dev/null 2>&1; then
     echo "  Starting Docker Desktop..."
     "/c/Program Files/Docker/Docker/Docker Desktop.exe" &
@@ -36,7 +36,7 @@ fi
 
 # 2. Start Redis container
 echo ""
-echo "[2/5] Starting Redis..."
+echo "[2/6] Starting Redis..."
 if docker ps --format '{{.Names}}' | grep -q '^pol-redis$'; then
     echo "  Redis is already running."
 else
@@ -46,7 +46,7 @@ fi
 
 # 3. Activate venv & start Celery worker in background
 echo ""
-echo "[3/5] Starting Celery worker..."
+echo "[3/6] Starting Celery worker..."
 cd "$BACKEND_DIR"
 source venv/Scripts/activate
 celery -A config worker --loglevel=info --pool=solo > /dev/null 2>&1 &
@@ -56,15 +56,33 @@ echo "  Celery worker started (PID: $CELERY_PID)."
 
 # 4. Start Django server in background
 echo ""
-echo "[4/5] Starting Django server..."
-python manage.py runserver 8000 > /dev/null 2>&1 &
+echo "[4/6] Starting Django server..."
+python manage.py runserver 0.0.0.0:8000 > /dev/null 2>&1 &
 DJANGO_PID=$!
 sleep 2
 echo "  Django server started (PID: $DJANGO_PID)."
 
-# 5. Start Next.js frontend
+# 5. Start AI Backend server in background
 echo ""
-echo "[5/5] Starting Next.js frontend..."
+echo "[5/6] Starting AI Backend server..."
+cd "$ROOT_DIR/POL_AI-main"
+if [ ! -d "venv" ]; then
+    echo "  Creating virtual environment for AI Backend..."
+    python -m venv venv
+    source venv/Scripts/activate
+    echo "  Installing dependencies for AI Backend..."
+    pip install -r requirements.txt > /dev/null 2>&1
+else
+    source venv/Scripts/activate
+fi
+python manage.py runserver 8001 > /dev/null 2>&1 &
+AI_PID=$!
+sleep 2
+echo "  AI Backend server started (PID: $AI_PID)."
+
+# 6. Start Next.js frontend
+echo ""
+echo "[6/6] Starting Next.js frontend..."
 cd "$FRONTEND_DIR"
 npm run dev > /dev/null 2>&1 &
 FRONTEND_PID=$!
@@ -76,6 +94,7 @@ echo "=========================================="
 echo "  All services running!"
 echo "  Frontend: http://localhost:3000"
 echo "  Backend:  http://127.0.0.1:8000"
+echo "  AI API:   http://127.0.0.1:8001"
 echo "  Redis:    127.0.0.1:6379"
 echo "  Celery:   Worker active"
 echo "=========================================="
@@ -83,5 +102,5 @@ echo ""
 echo "Press Ctrl+C to stop all services."
 
 # Wait and cleanup on exit
-trap "echo ''; echo 'Stopping all services...'; kill $CELERY_PID $DJANGO_PID $FRONTEND_PID 2>/dev/null; echo 'Done.'; exit 0" SIGINT SIGTERM
+trap "echo ''; echo 'Stopping all services...'; kill $CELERY_PID $DJANGO_PID $AI_PID $FRONTEND_PID 2>/dev/null; echo 'Done.'; exit 0" SIGINT SIGTERM
 wait

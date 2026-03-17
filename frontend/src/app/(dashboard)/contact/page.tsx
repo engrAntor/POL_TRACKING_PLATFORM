@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from 'react';
-
-const API_BASE = 'http://127.0.0.1:8000/api';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 export default function ContactPage() {
     const [form, setForm] = useState({ name: '', email: '', slNo: '', description: '' });
     const [submitting, setSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
+    const [error, setError] = useState('');
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -16,24 +16,30 @@ export default function ContactPage() {
     const handleSubmit = async () => {
         if (!form.name || !form.email || !form.description) return;
         setSubmitting(true);
+        setError('');
         try {
-            // Pre-fill user data from localStorage if available
-            const userData = JSON.parse(localStorage.getItem('user') || '{}');
             const token = localStorage.getItem('access_token');
-
-            // Since there's no dedicated contact endpoint, we can store as a notification
-            // or just show success for now. The super admin issues page will read from backend.
-            // For now, send as a basic POST to a generic endpoint
-            await fetch(`${API_BASE}/auth/profile/`, {
-                method: 'GET',
-                headers: { Authorization: `Bearer ${token}` },
+            const aiBaseUrl = process.env.NEXT_PUBLIC_AI_API_URL || 'http://127.0.0.1:8001';
+            const res = await fetchWithAuth(`${aiBaseUrl}/api/ai/tickets/`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    name: form.name,
+                    email: form.email,
+                    description: form.slNo ? `[SL No: ${form.slNo}] ${form.description}` : form.description
+                }),
             });
 
-            setSuccess(true);
-            setForm({ name: '', email: '', slNo: '', description: '' });
-            setTimeout(() => setSuccess(false), 3000);
+            if (res.ok) {
+                setSuccess(true);
+                setForm({ name: '', email: '', slNo: '', description: '' });
+                setTimeout(() => setSuccess(false), 4000);
+            } else {
+                const errorData = await res.json().catch(() => ({}));
+                const msg = errorData?.detail || errorData?.errors || 'Submission failed. Please try again.';
+                setError(typeof msg === 'string' ? msg : JSON.stringify(msg));
+            }
         } catch {
-            console.error('Failed to submit');
+            setError('Could not connect to the support server. Please try again.');
         } finally {
             setSubmitting(false);
         }
@@ -67,6 +73,7 @@ export default function ContactPage() {
 
             <div className="mt-8 flex items-center justify-end gap-4">
                 {success && <span className="text-green-600 font-medium">Issue submitted successfully!</span>}
+                {error && <span className="text-red-500 font-medium text-sm">{error}</span>}
                 <button onClick={handleSubmit} disabled={submitting} className="bg-[#0E3B1F] text-white px-10 py-4 rounded-xl font-semibold text-lg hover:bg-[#2d5a45] transition-colors disabled:opacity-50">
                     {submitting ? 'Submitting...' : 'Submit'}
                 </button>

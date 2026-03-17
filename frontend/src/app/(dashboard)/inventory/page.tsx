@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 import { Search, Sparkles, X, Send, MessageSquareText, ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react';
 
 const API_BASE = 'http://127.0.0.1:8000/api/dashboard';
@@ -59,7 +60,7 @@ export default function InventoryPage() {
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [chatInput, setChatInput] = useState('');
     const [messages, setMessages] = useState([
-        { id: 1, text: "Hello! I am Marie. How can I help you today? You can ask me to add inventory or find products in the marketplace.", sender: 'ai' }
+        { id: 1, text: "Hello! I am Lilian. How can I help you manage your inventory today? You can ask me to track items or find expiries.", sender: 'ai' }
     ]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -117,10 +118,33 @@ export default function InventoryPage() {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    const sendMessage = () => {
+    const sendMessage = async () => {
         if (!chatInput.trim()) return;
-        setMessages(prev => [...prev, { id: prev.length + 1, text: chatInput, sender: 'user' }]);
+        const userMsg = chatInput;
+        setMessages(prev => [...prev, { id: prev.length + 1, text: userMsg, sender: 'user' }]);
         setChatInput('');
+
+        try {
+            const aiBaseUrl = process.env.NEXT_PUBLIC_AI_API_URL || 'http://127.0.0.1:8001';
+            const res = await fetchWithAuth(`${aiBaseUrl}/api/ai/chat/`, {
+                method: 'POST',
+                body: JSON.stringify({ query: userMsg }),
+            });
+            
+            if (res.status === 429) {
+                setMessages(prev => [...prev, { id: prev.length + 1, text: 'Rate limit reached. Please wait a minute.', sender: 'ai' }]);
+                return;
+            }
+
+            const data = await res.json();
+            if (data.success && data.message) {
+                setMessages(prev => [...prev, { id: prev.length + 1, text: data.message, sender: 'ai' }]);
+            } else {
+                setMessages(prev => [...prev, { id: prev.length + 1, text: 'Sorry, I encountered an error processing that request.', sender: 'ai' }]);
+            }
+        } catch (error) {
+            setMessages(prev => [...prev, { id: prev.length + 1, text: 'Sorry, I am unable to connect to the server right now.', sender: 'ai' }]);
+        }
     };
 
     const filteredItems = items.filter((item) => {
@@ -264,7 +288,7 @@ export default function InventoryPage() {
                                 <Sparkles className="w-6 h-6 text-green-400" />
                             </div>
                             <div className="flex-1">
-                                <h3 className="text-white font-bold text-base leading-none mb-1">Ask Marie</h3>
+                                <h3 className="text-white font-bold text-base leading-none mb-1">Ask Lilian</h3>
                                 <div className="flex items-center gap-1.5">
                                     <span className="text-gray-400 text-xs">Always Active</span>
                                     <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block"></span>

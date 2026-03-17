@@ -215,7 +215,7 @@ export default function OverviewPage() {
                             })
                         )}
                     </div>
-                    <a href="/tracker" className="block text-center text-sm text-primary hover:underline mt-4">
+                    <a href="/notifications" className="block text-center text-sm text-primary hover:underline mt-4">
                         View All Alerts
                     </a>
                 </div>

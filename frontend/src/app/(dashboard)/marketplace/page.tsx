@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 import { MapPin, Filter, ChevronDown, Sparkles, X, Send, MessageSquareText, Minus, Plus, Upload, FileText, Download, Crown, AlertTriangle } from 'lucide-react';
 
@@ -67,7 +68,7 @@ export default function MarketplacePage() {
     const [stripeConnecting, setStripeConnecting] = useState(false);
     const [chatInput, setChatInput] = useState('');
     const [messages, setMessages] = useState([
-        { id: 1, text: "Hello! I am Lilian. How can I help you today? You can ask me to add inventory or find products in the marketplace.", sender: 'ai' }
+        { id: 1, text: "Hello! I am Marie. How can I help you navigate the marketplace today? I can help you find products for sale or buy them.", sender: 'ai' }
     ]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -129,7 +130,7 @@ export default function MarketplacePage() {
                         if (data.subscription_tier) setUserTier(data.subscription_tier);
                     }
                 })
-                .catch(() => {});
+                .catch(() => { });
         }
 
         // Auto-refresh listings when user returns to this tab
@@ -184,10 +185,33 @@ export default function MarketplacePage() {
     }, [fetchListings]);
     useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
-    const sendMessage = () => {
+    const sendMessage = async () => {
         if (!chatInput.trim()) return;
-        setMessages(prev => [...prev, { id: prev.length + 1, text: chatInput, sender: 'user' }]);
+        const userMsg = chatInput;
+        setMessages(prev => [...prev, { id: prev.length + 1, text: userMsg, sender: 'user' }]);
         setChatInput('');
+
+        try {
+            const aiBaseUrl = process.env.NEXT_PUBLIC_AI_API_URL || 'http://127.0.0.1:8001';
+            const res = await fetchWithAuth(`${aiBaseUrl}/api/ai/marketplace-chat/`, {
+                method: 'POST',
+                body: JSON.stringify({ query: userMsg }),
+            });
+
+            if (res.status === 429) {
+                setMessages(prev => [...prev, { id: prev.length + 1, text: 'Rate limit reached. Please wait a minute.', sender: 'ai' }]);
+                return;
+            }
+
+            const data = await res.json();
+            if (data.success && data.message) {
+                setMessages(prev => [...prev, { id: prev.length + 1, text: data.message, sender: 'ai' }]);
+            } else {
+                setMessages(prev => [...prev, { id: prev.length + 1, text: 'Sorry, I encountered an error processing that request.', sender: 'ai' }]);
+            }
+        } catch (error) {
+            setMessages(prev => [...prev, { id: prev.length + 1, text: 'Sorry, I am unable to connect to the server right now.', sender: 'ai' }]);
+        }
     };
 
     const handleSearch = () => { setLoading(true); fetchListings(); };
@@ -329,9 +353,11 @@ export default function MarketplacePage() {
     };
 
     const buyListings: Listing[] = listings.map(l => ({ ...l, _tab: 'buy' as const }));
+    // Deduplicate: myInventory items that are already listed (in myListings) should not be shown twice
+    const myListingIds = new Set(myListings.map(l => l.id));
     const sellListings: Listing[] = [
         ...myListings.map(l => ({ ...l, _tab: 'sell' as const })),
-        ...myInventory.map(l => ({ ...l, _tab: 'sell' as const })),
+        ...myInventory.filter(l => !myListingIds.has(l.id)).map(l => ({ ...l, _tab: 'sell' as const })),
     ];
     const allProducts = listingType === 'buy' ? buyListings : listingType === 'sell' ? sellListings : [...buyListings, ...sellListings];
     const allLocations = Array.from(new Set([...listings, ...myListings, ...myInventory].map(l => l.location).filter(Boolean)));
@@ -631,7 +657,7 @@ export default function MarketplacePage() {
                         <div className="bg-[#1a2e22] px-4 py-3 flex items-center gap-3">
                             <div className="w-12 h-12 bg-[#0d1a10] rounded-xl flex items-center justify-center shadow-lg shadow-green-900/40 border border-green-900/30"><Sparkles className="w-6 h-6 text-green-400" /></div>
                             <div className="flex-1">
-                                <h3 className="text-white font-bold text-base leading-none mb-1">Ask Lilian</h3>
+                                <h3 className="text-white font-bold text-base leading-none mb-1">Ask Marie</h3>
                                 <div className="flex items-center gap-1.5"><span className="text-gray-400 text-xs">Always Active</span><span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block"></span><span className="text-gray-400 text-xs">v2.5</span></div>
                             </div>
                             <button onClick={() => setIsChatOpen(false)} className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center text-white hover:bg-white/10"><X className="w-4 h-4" /></button>
@@ -639,7 +665,13 @@ export default function MarketplacePage() {
                         <div className="flex-1 overflow-y-auto bg-gray-100 p-4 space-y-3">
                             {messages.map(msg => (
                                 <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-[82%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${msg.sender === 'user' ? 'bg-[#1a2e22] text-white rounded-br-sm' : 'bg-white text-gray-800 shadow-sm rounded-tl-sm'}`}>{msg.text}</div>
+                                    <div className={`max-w-[82%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${msg.sender === 'user' ? 'bg-[#1a2e22] text-white rounded-br-sm' : 'bg-white text-gray-800 shadow-sm rounded-tl-sm'}`}>
+                                        {msg.sender === 'ai' ? (
+                                            <div dangerouslySetInnerHTML={{ __html: msg.text.replace(/\n/g, '<br />') }} />
+                                        ) : (
+                                            msg.text
+                                        )}
+                                    </div>
                                 </div>
                             ))}
                             <div ref={messagesEndRef} />
@@ -665,7 +697,7 @@ export default function MarketplacePage() {
                             </button>
                         </div>
                         <div className="absolute bottom-full right-0 mb-2 w-48 bg-gray-900 text-white text-xs text-center p-2 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
-                            Upgrade to Premium to unlock Lilian AI Manual Matching
+                            Upgrade to Premium to unlock Marie AI Manual Matching
                         </div>
                     </div>
                 )}
