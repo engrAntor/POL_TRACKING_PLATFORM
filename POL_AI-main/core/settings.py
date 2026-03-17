@@ -103,8 +103,9 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        # Point directly to main backend database
-        'NAME': BASE_DIR.parent / 'backend' / 'db.sqlite3',
+        # In Docker: pointed to /backend/db.sqlite3 via BACKEND_DB_PATH env var
+        # Locally: falls back to relative path ../backend/db.sqlite3
+        'NAME': os.getenv('BACKEND_DB_PATH', str(BASE_DIR.parent / 'backend' / 'db.sqlite3')),
     }
 }
 
