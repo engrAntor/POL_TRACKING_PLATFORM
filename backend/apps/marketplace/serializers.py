@@ -121,7 +121,43 @@ class ListingCreateSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
+class ListingUpdateSerializer(serializers.ModelSerializer):
+    """Permissive serializer for partial PATCH updates from the frontend."""
+    pol_type = serializers.ChoiceField(
+        choices=[('petroleum', 'Petroleum'), ('oil', 'Oil'), ('lubricant', 'Lubricant'), ('other', 'Other')],
+        required=False,
+    )
+
+    class Meta:
+        model = Listing
+        fields = [
+            'name', 'company', 'pol_type', 'price', 'price_unit',
+            'description', 'location', 'brand', 'batch_number',
+            'expiry', 'shelf_life', 'quantity', 'quantity_unit',
+            'sds_file', 'rating', 'category', 'status',
+        ]
+        extra_kwargs = {
+            'name':          {'required': False, 'allow_blank': True},
+            'company':       {'required': False, 'allow_blank': True},
+            'location':      {'required': False, 'allow_blank': True},
+            'price':         {'required': False, 'allow_null': True},
+            'price_unit':    {'required': False, 'allow_blank': True},
+            'description':   {'required': False, 'allow_blank': True},
+            'brand':         {'required': False, 'allow_blank': True},
+            'batch_number':  {'required': False, 'allow_blank': True},
+            'expiry':        {'required': False, 'allow_null': True},
+            'shelf_life':    {'required': False, 'allow_blank': True},
+            'quantity':      {'required': False},
+            'quantity_unit': {'required': False, 'allow_blank': True},
+            'sds_file':      {'required': False, 'allow_null': True},
+            'rating':        {'required': False, 'allow_null': True},
+            'category':      {'required': False},
+            'status':        {'required': False},
+        }
+
+
 class SellListingSerializer(serializers.Serializer):
+
     """Create a sell listing from an existing inventory item."""
     pol_item_id = serializers.IntegerField()
     price = serializers.DecimalField(max_digits=10, decimal_places=2)

@@ -11,7 +11,7 @@ from apps.accounts.permissions import IsAdmin
 from apps.admin_dashboard.models import POLItem
 from apps.superadmin.models import Order
 from .models import Listing
-from .serializers import ListingSerializer, ListingCreateSerializer, SellListingSerializer, InventoryForMarketSerializer
+from .serializers import ListingSerializer, ListingCreateSerializer, SellListingSerializer, InventoryForMarketSerializer, ListingUpdateSerializer
 
 stripe.api_key = django_settings.STRIPE_SECRET_KEY
 
@@ -152,7 +152,7 @@ class SellFromInventoryView(APIView):
 # ── Update Listing ────────────────────────────────────────────────────────────
 class ListingUpdateView(generics.UpdateAPIView):
     permission_classes = [IsAdmin]
-    serializer_class = ListingSerializer
+    serializer_class = ListingUpdateSerializer
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_queryset(self):
