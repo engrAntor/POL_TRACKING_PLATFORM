@@ -62,6 +62,7 @@ export default function InventoryPage() {
     const [messages, setMessages] = useState([
         { id: 1, text: "Hello! I am Lilian. How can I help you manage your inventory today? You can ask me to track items or find expiries.", sender: 'ai' }
     ]);
+    const [isAiTyping, setIsAiTyping] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const getToken = () => localStorage.getItem('access_token');
@@ -119,10 +120,11 @@ export default function InventoryPage() {
     }, [messages]);
 
     const sendMessage = async () => {
-        if (!chatInput.trim()) return;
+        if (!chatInput.trim() || isAiTyping) return;
         const userMsg = chatInput;
         setMessages(prev => [...prev, { id: prev.length + 1, text: userMsg, sender: 'user' }]);
         setChatInput('');
+        setIsAiTyping(true);
 
         try {
             const aiBaseUrl = process.env.NEXT_PUBLIC_AI_API_URL || 'http://127.0.0.1:8001';
@@ -144,6 +146,8 @@ export default function InventoryPage() {
             }
         } catch (error) {
             setMessages(prev => [...prev, { id: prev.length + 1, text: 'Sorry, I am unable to connect to the server right now.', sender: 'ai' }]);
+        } finally {
+            setIsAiTyping(false);
         }
     };
 
@@ -307,13 +311,22 @@ export default function InventoryPage() {
                                     </div>
                                 </div>
                             ))}
+                            {isAiTyping && (
+                                <div className="flex justify-start">
+                                    <div className="bg-white px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm flex items-center gap-1.5">
+                                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                                    </div>
+                                </div>
+                            )}
                             <div ref={messagesEndRef} />
                         </div>
                         <div className="h-px bg-gray-200" />
                         <div className="p-4 bg-white">
                             <div className="flex items-center gap-2 bg-[#e6f4ec] rounded-xl px-4 py-3 border border-green-100">
-                                <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendMessage()} placeholder="Ask anything" className="flex-1 bg-transparent text-gray-600 placeholder-gray-400 text-sm focus:outline-none" />
-                                <button onClick={sendMessage} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-[#1a2e22] transition-colors">
+                                <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendMessage()} placeholder={isAiTyping ? 'Lilian is typing...' : 'Ask anything'} disabled={isAiTyping} className="flex-1 bg-transparent text-gray-600 placeholder-gray-400 text-sm focus:outline-none disabled:opacity-60" />
+                                <button onClick={sendMessage} disabled={isAiTyping} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-[#1a2e22] transition-colors disabled:opacity-40">
                                     <Send className="w-4 h-4" />
                                 </button>
                             </div>

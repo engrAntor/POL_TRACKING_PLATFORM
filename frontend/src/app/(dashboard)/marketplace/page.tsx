@@ -26,6 +26,7 @@ interface Listing {
     quantity_unit: string;
     rating: string | null;
     sds_file_url: string | null;
+    image_url: string | null;
     category: string;
     status: string;
     is_inventory?: boolean;
@@ -70,6 +71,7 @@ export default function MarketplacePage() {
     const [messages, setMessages] = useState([
         { id: 1, text: "Hello! I am Marie. How can I help you navigate the marketplace today? I can help you find products for sale or buy them.", sender: 'ai' }
     ]);
+    const [isAiTyping, setIsAiTyping] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const getToken = () => localStorage.getItem('access_token');
@@ -186,10 +188,11 @@ export default function MarketplacePage() {
     useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
     const sendMessage = async () => {
-        if (!chatInput.trim()) return;
+        if (!chatInput.trim() || isAiTyping) return;
         const userMsg = chatInput;
         setMessages(prev => [...prev, { id: prev.length + 1, text: userMsg, sender: 'user' }]);
         setChatInput('');
+        setIsAiTyping(true);
 
         try {
             const aiBaseUrl = process.env.NEXT_PUBLIC_AI_API_URL || 'http://127.0.0.1:8001';
@@ -211,6 +214,8 @@ export default function MarketplacePage() {
             }
         } catch (error) {
             setMessages(prev => [...prev, { id: prev.length + 1, text: 'Sorry, I am unable to connect to the server right now.', sender: 'ai' }]);
+        } finally {
+            setIsAiTyping(false);
         }
     };
 
@@ -572,6 +577,16 @@ export default function MarketplacePage() {
                                 </>
                             ) : (
                                 <>
+                                    {/* Product Image */}
+                                    {selectedProduct.image_url ? (
+                                        <div className="w-full h-40 rounded-xl overflow-hidden mb-4 border border-gray-100">
+                                            <img src={selectedProduct.image_url} alt={selectedProduct.name} className="w-full h-full object-cover" />
+                                        </div>
+                                    ) : (
+                                        <div className="w-full h-40 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center mb-4 border border-gray-100">
+                                            <span className="text-4xl">📦</span>
+                                        </div>
+                                    )}
                                     {/* Buy / Order Form */}
                                     <div className="flex items-center gap-1.5 text-sm text-gray-500 mb-5"><MapPin className="h-4 w-4 text-[#0E3B1F]" /> {selectedProduct.location}</div>
                                     <div className="border-t border-gray-100 pt-4 space-y-4">
@@ -674,13 +689,22 @@ export default function MarketplacePage() {
                                     </div>
                                 </div>
                             ))}
+                            {isAiTyping && (
+                                <div className="flex justify-start">
+                                    <div className="bg-white px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm flex items-center gap-1.5">
+                                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                                    </div>
+                                </div>
+                            )}
                             <div ref={messagesEndRef} />
                         </div>
                         <div className="h-px bg-gray-200" />
                         <div className="p-4 bg-white">
                             <div className="flex items-center gap-2 bg-[#e6f4ec] rounded-xl px-4 py-3 border border-green-100">
-                                <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendMessage()} placeholder="Ask anything" className="flex-1 bg-transparent text-gray-600 placeholder-gray-400 text-sm focus:outline-none" />
-                                <button onClick={sendMessage} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-[#1a2e22]"><Send className="w-4 h-4" /></button>
+                                <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendMessage()} placeholder={isAiTyping ? 'Marie is typing...' : 'Ask anything'} disabled={isAiTyping} className="flex-1 bg-transparent text-gray-600 placeholder-gray-400 text-sm focus:outline-none disabled:opacity-60" />
+                                <button onClick={sendMessage} disabled={isAiTyping} className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-[#1a2e22] disabled:opacity-40"><Send className="w-4 h-4" /></button>
                             </div>
                         </div>
                     </div>

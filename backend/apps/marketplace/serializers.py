@@ -6,6 +6,7 @@ from .models import Listing
 class ListingSerializer(serializers.ModelSerializer):
     seller_name = serializers.CharField(source='user.full_name', read_only=True)
     sds_file_url = serializers.SerializerMethodField()
+    image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Listing
@@ -13,10 +14,10 @@ class ListingSerializer(serializers.ModelSerializer):
             'id', 'seller_name', 'name', 'company', 'pol_type',
             'price', 'price_unit', 'description', 'location',
             'brand', 'batch_number', 'expiry', 'shelf_life',
-            'quantity', 'quantity_unit', 'sds_file', 'sds_file_url', 'rating',
-            'category', 'status', 'created_at', 'updated_at',
+            'quantity', 'quantity_unit', 'sds_file', 'sds_file_url',
+            'image_url', 'rating', 'category', 'status', 'created_at', 'updated_at',
         ]
-        read_only_fields = ['id', 'seller_name', 'sds_file_url', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'seller_name', 'sds_file_url', 'image_url', 'created_at', 'updated_at']
 
     def get_sds_file_url(self, obj):
         if obj.sds_file:
@@ -24,6 +25,14 @@ class ListingSerializer(serializers.ModelSerializer):
             if request:
                 return request.build_absolute_uri(obj.sds_file.url)
             return obj.sds_file.url
+        return None
+
+    def get_image_url(self, obj):
+        if obj.pol_item and obj.pol_item.image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.pol_item.image.url)
+            return obj.pol_item.image.url
         return None
 
 
