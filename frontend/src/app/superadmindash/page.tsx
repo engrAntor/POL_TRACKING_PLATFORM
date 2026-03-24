@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
 const API_BASE = 'http://127.0.0.1:8000/api/auth';
@@ -11,6 +11,15 @@ export default function SuperAdminLoginPage() {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const [rememberMe, setRememberMe] = useState(false);
+
+    useEffect(() => {
+        const savedEmail = localStorage.getItem("superadmin_remembered_email");
+        if (savedEmail) {
+            setEmail(savedEmail);
+            setRememberMe(true);
+        }
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -29,6 +38,11 @@ export default function SuperAdminLoginPage() {
                 localStorage.setItem("access_token", data.tokens.access);
                 localStorage.setItem("refresh_token", data.tokens.refresh);
                 localStorage.setItem("user", JSON.stringify(data.user));
+                if (rememberMe) {
+                    localStorage.setItem("superadmin_remembered_email", email);
+                } else {
+                    localStorage.removeItem("superadmin_remembered_email");
+                }
                 window.location.href = "/superadmin/overview";
             } else {
                 const msg = data.error || data.non_field_errors?.[0] || data.detail || "Login failed.";
@@ -141,7 +155,8 @@ export default function SuperAdminLoginPage() {
                                     id="remember-me"
                                     name="remember-me"
                                     type="checkbox"
-                                    defaultChecked
+                                    checked={rememberMe}
+                                    onChange={(e) => setRememberMe(e.target.checked)}
                                     className="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary"
                                 />
                                 <label htmlFor="remember-me" className="ml-2 text-base font-medium text-gray-700">

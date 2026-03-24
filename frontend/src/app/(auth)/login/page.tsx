@@ -14,6 +14,18 @@ export default function LoginPage() {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const [googleError, setGoogleError] = useState("");
+    const [rememberMe, setRememberMe] = useState(false);
+
+    // Load remembered credentials on mount
+    useEffect(() => {
+        const savedEmail = localStorage.getItem("remembered_email");
+        const savedPassword = localStorage.getItem("remembered_password");
+        if (savedEmail && savedPassword) {
+            setEmail(savedEmail);
+            setPassword(savedPassword);
+            setRememberMe(true);
+        }
+    }, []);
 
     // Handle Google callback token from URL hash
     useEffect(() => {
@@ -71,6 +83,13 @@ export default function LoginPage() {
                 localStorage.setItem("access_token", data.tokens.access);
                 localStorage.setItem("refresh_token", data.tokens.refresh);
                 localStorage.setItem("user", JSON.stringify(data.user));
+                if (rememberMe) {
+                    localStorage.setItem("remembered_email", email);
+                    localStorage.setItem("remembered_password", password);
+                } else {
+                    localStorage.removeItem("remembered_email");
+                    localStorage.removeItem("remembered_password");
+                }
                 window.location.href = "/overview";
             } else {
                 const msg = data.error || data.non_field_errors?.[0] || data.detail || "Login failed.";
@@ -143,7 +162,8 @@ export default function LoginPage() {
                             id="remember-me"
                             name="remember-me"
                             type="checkbox"
-                            defaultChecked
+                            checked={rememberMe}
+                            onChange={(e) => setRememberMe(e.target.checked)}
                             className="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary"
                         />
                         <label htmlFor="remember-me" className="ml-2 text-base font-medium text-gray-700">
