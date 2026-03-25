@@ -2,6 +2,9 @@
 
 A full-stack inventory and order management system built to **track, manage, and sell Petroleum, Oil, and Lubricants (POL) before expiry**. The platform features a dual-role system with separate dashboards for Admin and Super Admin users, a marketplace for buying/selling POL products, AI-powered assistants (Lilian & Marie), a Support Ticket System with n8n workflow automation, Stripe-powered payments and subscriptions, Google OAuth login, and a complete authentication system with email verification and OTP-based password recovery.
 
+**Below is the full presentation video walking through every feature of the platform in detail:**<br>
+📹 Video Link: https://drive.google.com/file/d/1DyC9Vxe6nUQbo6U15trIA-qL0ODeRsqn/view?usp=sharing
+
 **Admin Panel:**<br>
 https://poltrackingbyantor.netlify.app/
 
