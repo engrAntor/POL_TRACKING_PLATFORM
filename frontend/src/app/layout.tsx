@@ -7,6 +7,9 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
     title: "POL Tracking Platform",
     description: "Inventory management and intelligent tracking",
+    icons: {
+        icon: "/assets/logo/logo.png",
+    },
 };
 
 export default function RootLayout({
