@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-const API_BASE = 'http://127.0.0.1:8000/api/auth';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL + '/auth';
 
 export default function RegisterPage() {
     const [showPassword, setShowPassword] = useState(false);

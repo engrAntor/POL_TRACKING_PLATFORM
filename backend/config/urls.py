@@ -11,6 +11,7 @@ urlpatterns = [
     path('api/dashboard/', include('apps.admin_dashboard.urls')),
     path('api/superadmin/', include('apps.superadmin.urls')),
     path('api/marketplace/', include('apps.marketplace.urls')),
+    path('api/ai/', include('apps.pol_ai.urls')),
 ]
 
 if settings.DEBUG:

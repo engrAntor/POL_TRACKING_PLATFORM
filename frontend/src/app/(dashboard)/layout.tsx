@@ -43,10 +43,13 @@ function PwInput({ label, show, onToggle, value, onChange }: { label: string; sh
     );
 }
 
-const API_AUTH = 'http://127.0.0.1:8000/api/auth';
-const API_BASE = 'http://127.0.0.1:8000';
-const avatarUrl = (url?: string | null) => {
-    if (!url) return '/assets/images/my_dp.png';
+const API_AUTH = process.env.NEXT_PUBLIC_API_URL + '/auth';
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || '').replace('/api', '');
+const avatarUrl = (url?: string | null, name?: string) => {
+    if (!url) {
+        const initials = name ? encodeURIComponent(name) : 'User';
+        return `https://ui-avatars.com/api/?name=${initials}&background=0E3B1F&color=fff&bold=true`;
+    }
     if (url.startsWith('http')) return url;
     return `${API_BASE}${url}`;
 };
@@ -70,7 +73,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const [showPassword, setShowPassword] = useState(false);
 
     // Profile data
-    const [profileData, setProfileData] = useState({ first_name: '', last_name: '', email: '', phone: '', company: '', job_title: '', avatar: '', gst_number: '', company_address: '', delivery_address: '', contact_points: '', terms_conditions: '', terms_conditions_file: '', delivery_terms: '' });
+    const [profileData, setProfileData] = useState({ first_name: '', last_name: '', email: '', phone: '', company: '', job_title: '', avatar: '', gst_number: '', company_address: '', delivery_address: '', contact_points: '', terms_conditions: '', terms_conditions_file: '', delivery_terms: '', stripe_onboarding_complete: false, subscription_tier: 'basic' });
     const [profileName, setProfileName] = useState('');
     const [profileEmail, setProfileEmail] = useState('');
     const [profilePhone, setProfilePhone] = useState('');
@@ -107,12 +110,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const [showConfirmPw, setShowConfirmPw] = useState(false);
 
     const getToken = () => localStorage.getItem('access_token');
+    const [authLoading, setAuthLoading] = useState(true);
+
+    // Auth Guard: Redirect to login if no token
+    useEffect(() => {
+        const token = getToken();
+        if (!token) {
+            router.push('/login');
+        } else {
+            setAuthLoading(false);
+        }
+    }, [router]);
 
     const fetchBellNotifs = useCallback(async () => {
         try {
             const token = getToken();
             if (!token) return;
-            const res = await fetch('http://127.0.0.1:8000/api/dashboard/notifications/', {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/notifications/`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (res.ok) {
@@ -297,8 +311,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }
     };
 
+    if (authLoading) {
+        return <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#0E3B1F]"></div>
+        </div>;
+    }
+
     return (
-        <div className="flex h-screen min-h-0 bg-gray-50 overflow-hidden">
+        <div className="flex h-screen bg-gray-50 font-sans overflow-hidden">
             {/* Mobile Sidebar Overlay */}
             {isSidebarOpen && (
                 <div
@@ -435,7 +455,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 className="h-10 w-10 lg:h-11 lg:w-11 rounded-full bg-gray-100 overflow-hidden shrink-0 border-2 border-white shadow-md ring-1 ring-gray-200 hover:ring-gray-400 transition-all"
                             >
                                 <img
-                                    src={avatarUrl(profileData.avatar)}
+                                    src={avatarUrl(profileData.avatar, profileName)}
                                     alt="User Profile"
                                     className="h-full w-full object-cover object-top"
                                 />
@@ -448,7 +468,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                     <div className="flex flex-col items-center pt-5 pb-3 px-4">
                                         <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow ring-1 ring-gray-200 mb-2">
                                             <img
-                                                src={avatarUrl(profileData.avatar)}
+                                                src={avatarUrl(profileData.avatar, profileName)}
                                                 alt="Profile"
                                                 className="h-full w-full object-cover object-top"
                                             />
@@ -536,7 +556,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                                 <label className="sm:w-20 text-sm font-medium text-gray-700 shrink-0">Photo</label>
                                 <div className="flex items-center gap-3 flex-1">
                                     <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-300 shrink-0">
-                                        <img src={avatarPreview || avatarUrl(profileData.avatar)} alt="Avatar" className="w-full h-full object-cover object-top" />
+                                        <img src={avatarPreview || avatarUrl(profileData.avatar, profileName)} alt="Avatar" className="w-full h-full object-cover object-top" />
                                     </div>
                                     <label className="cursor-pointer px-3 py-1.5 rounded-lg border border-gray-300 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors">
                                         {avatarFile ? 'Change' : 'Upload'}

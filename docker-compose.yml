@@ -15,10 +15,15 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
+    env_file:
+      - ./backend/.env
     environment:
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
       - FRONTEND_URL=http://localhost:3000
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     depends_on:
       - redis
     restart: always
@@ -31,45 +36,16 @@ services:
     command: celery -A config worker --loglevel=info
     volumes:
       - ./backend:/app
+    env_file:
+      - ./backend/.env
     environment:
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     depends_on:
       - redis
       - backend
     restart: always
 
-  ai_backend:
-    build:
-      context: ./POL_AI-main
-      dockerfile: Dockerfile
-    container_name: pol-ai-backend
-    ports:
-      - "8001:8001"
-    volumes:
-      - ./POL_AI-main:/app
-      - ./backend:/backend
-    environment:
-      - BACKEND_DB_PATH=/backend/db.sqlite3
-    depends_on:
-      - backend
-    restart: always
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: pol-frontend
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
-      - NEXT_PUBLIC_AI_API_URL=http://localhost:8001
-    depends_on:
-      - backend
-      - ai_backend
-    restart: always

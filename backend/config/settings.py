@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'apps.admin_dashboard',
     'apps.superadmin',
     'apps.marketplace',
+    'apps.pol_ai',
 ]
 
 # ── Middleware ─────────────────────────────────────────────────────────────────
@@ -107,7 +108,11 @@ CORS_ALLOWED_ORIGINS = config(
 )
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = DEBUG  # Allow all origins in development
-CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='http://localhost:8000,http://127.0.0.1:8000', cast=Csv())
+CSRF_TRUSTED_ORIGINS = config(
+    'CSRF_TRUSTED_ORIGINS', 
+    default='http://localhost:3000,http://127.0.0.1:3000,http://localhost:8000,http://127.0.0.1:8000', 
+    cast=Csv()
+)
 
 # ── Django REST Framework ─────────────────────────────────────────────────────
 REST_FRAMEWORK = {
@@ -124,6 +129,16 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+        'rest_framework.throttling.ScopedRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/day',
+        'user': '1000/day',
+        'ai_chat': '10/minute',
+    }
 }
 
 # ── JWT ───────────────────────────────────────────────────────────────────────
@@ -170,3 +185,6 @@ GOOGLE_CLIENT_SECRET = config('GOOGLE_CLIENT_SECRET', default='')
 STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default='')
 STRIPE_PUBLISHABLE_KEY = config('STRIPE_PUBLISHABLE_KEY', default='')
 STRIPE_WEBHOOK_SECRET = config('STRIPE_WEBHOOK_SECRET', default='')
+
+# ── AI Settings ──────────────────────────────────────────────────────────────
+GEMINI_API_KEY = config('GEMINI_API_KEY', default='')

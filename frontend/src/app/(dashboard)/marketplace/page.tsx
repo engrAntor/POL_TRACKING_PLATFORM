@@ -4,9 +4,11 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 import { MapPin, Filter, ChevronDown, Sparkles, X, Send, MessageSquareText, Minus, Plus, Upload, FileText, Download, Crown, AlertTriangle } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
-const API_BASE = 'http://127.0.0.1:8000/api/marketplace';
-const API_AUTH = 'http://127.0.0.1:8000/api/auth';
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api') + '/marketplace';
+const API_AUTH = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api') + '/auth';
 
 interface Listing {
     id: number;
@@ -158,7 +160,7 @@ export default function MarketplacePage() {
             // Call verify-payment to mark the listing as sold
             if (sessionId) {
                 const token = localStorage.getItem('access_token');
-                fetch('http://127.0.0.1:8000/api/marketplace/verify-payment/', {
+                fetch(`${process.env.NEXT_PUBLIC_API_URL}/marketplace/verify-payment/`, {
                     method: 'POST',
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -195,8 +197,8 @@ export default function MarketplacePage() {
         setIsAiTyping(true);
 
         try {
-            const aiBaseUrl = process.env.NEXT_PUBLIC_AI_API_URL || 'http://127.0.0.1:8001';
-            const res = await fetchWithAuth(`${aiBaseUrl}/api/ai/marketplace-chat/`, {
+            const aiBaseUrl = process.env.NEXT_PUBLIC_AI_API_URL || 'http://localhost:8000/api';
+            const res = await fetchWithAuth(`${aiBaseUrl}/ai/marketplace-chat/`, {
                 method: 'POST',
                 body: JSON.stringify({ query: userMsg }),
             });
@@ -682,7 +684,11 @@ export default function MarketplacePage() {
                                 <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                                     <div className={`max-w-[82%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${msg.sender === 'user' ? 'bg-[#1a2e22] text-white rounded-br-sm' : 'bg-white text-gray-800 shadow-sm rounded-tl-sm'}`}>
                                         {msg.sender === 'ai' ? (
-                                            <div dangerouslySetInnerHTML={{ __html: msg.text.replace(/\n/g, '<br />') }} />
+                                            <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-gray-800 prose-pre:text-white">
+                                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                    {msg.text}
+                                                </ReactMarkdown>
+                                            </div>
                                         ) : (
                                             msg.text
                                         )}

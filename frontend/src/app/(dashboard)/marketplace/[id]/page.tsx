@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronLeft, MapPin, ShieldCheck, Truck, X, Minus, Plus } from 'lucide-react';
 import Link from 'next/link';
 
-const API_BASE = 'http://127.0.0.1:8000/api/marketplace';
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api') + '/marketplace';
 
 interface Listing {
     id: number;

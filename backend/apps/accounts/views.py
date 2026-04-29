@@ -536,8 +536,11 @@ class VerifySubscriptionView(APIView):
             return Response({'error': 'Payment not completed.'}, status=status.HTTP_402_PAYMENT_REQUIRED)
 
         # Double-check that metadata matches
-        meta_user_id = session.metadata.get('user_id')
-        meta_tier = session.metadata.get('tier_id')
+        session_data = session.to_dict()
+        metadata = session_data.get('metadata', {})
+        meta_user_id = metadata.get('user_id')
+        meta_tier = metadata.get('tier_id')
+
         if meta_tier != tier_id or str(request.user.id) != str(meta_user_id):
             return Response({'error': 'Metadata mismatch.'}, status=status.HTTP_400_BAD_REQUEST)
 

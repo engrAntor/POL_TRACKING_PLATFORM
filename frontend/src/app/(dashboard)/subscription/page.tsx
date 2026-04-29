@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Check, Crown, Shield, Zap, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 
-const API_BASE = 'http://127.0.0.1:8000/api/auth';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL + '/auth';
 
 const TIERS = [
     {

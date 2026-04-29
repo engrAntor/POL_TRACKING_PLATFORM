@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
-const API_BASE = 'http://127.0.0.1:8000/api/auth';
-const GOOGLE_CLIENT_ID = "833764980640-9g96fhodvltlvmj55kd3o21fgg4ifui2.apps.googleusercontent.com";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL + '/auth';
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
 export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false);
