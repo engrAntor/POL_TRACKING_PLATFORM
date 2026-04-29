@@ -20,8 +20,8 @@ export default function UserIssuesPage() {
 
     const fetchTickets = async () => {
         try {
-            const aiBaseUrl = process.env.NEXT_PUBLIC_AI_API_URL || 'http://127.0.0.1:8001';
-            const res = await fetchWithAuth(`${aiBaseUrl}/api/ai/tickets/admin/`);
+            const aiBaseUrl = process.env.NEXT_PUBLIC_AI_API_URL || 'http://localhost:8000/api';
+            const res = await fetchWithAuth(`${aiBaseUrl}/ai/tickets/admin/`);
             if (res.ok) {
                 const data = await res.json();
                 setTickets(data.data || []);
@@ -39,8 +39,8 @@ export default function UserIssuesPage() {
 
     const handleUpdateStatus = async (id: string, newStatus: string) => {
         try {
-            const aiBaseUrl = process.env.NEXT_PUBLIC_AI_API_URL || 'http://127.0.0.1:8001';
-            const res = await fetchWithAuth(`${aiBaseUrl}/api/ai/tickets/admin/${id}/`, {
+            const aiBaseUrl = process.env.NEXT_PUBLIC_AI_API_URL || 'http://localhost:8000/api';
+            const res = await fetchWithAuth(`${aiBaseUrl}/ai/tickets/admin/${id}/`, {
                 method: 'PATCH',
                 body: JSON.stringify({ status: newStatus })
             });

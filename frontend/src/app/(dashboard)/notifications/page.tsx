@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AlertTriangle, Clock } from "lucide-react";
 
-const API_BASE = 'http://127.0.0.1:8000/api/dashboard';
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api') + '/dashboard';
 
 interface Notification {
     id: number;

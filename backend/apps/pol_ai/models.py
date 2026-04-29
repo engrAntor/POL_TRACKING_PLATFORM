@@ -1,10 +1,17 @@
 from django.db import models
+from django.conf import settings
 
 
 class AIConversationLog(models.Model):
     """
     Stores conversation history between users and AI assistants.
     """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True, blank=True,
+        related_name='ai_conversation_logs',
+    )
     user_query = models.TextField(help_text="The question the user asked")
     ai_response = models.TextField(help_text="The AI's response")
     intent_detected = models.CharField(

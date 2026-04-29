@@ -202,7 +202,7 @@ class FaissRAGService:
 
             context_text = json.dumps(context_data, indent=2)
 
-            recent_logs = AIConversationLog.objects.filter(assistant_name='lilian_rag').order_by('-created_at')[:5]
+            recent_logs = AIConversationLog.objects.filter(assistant_name='lilian_rag', user_id=user_id).order_by('-created_at')[:5]
             history_text = "RECENT CONVERSATION HISTORY:\n"
             if recent_logs.exists():
                 for log in reversed(recent_logs):
@@ -274,7 +274,7 @@ class MarketplaceFaissRAGService:
 
             context_text = json.dumps(context_data, indent=2)
 
-            recent_logs = AIConversationLog.objects.filter(assistant_name='marie_faiss').order_by('-created_at')[:5]
+            recent_logs = AIConversationLog.objects.filter(assistant_name='marie_faiss', user_id=user_id).order_by('-created_at')[:5]
             history_text = "RECENT CONVERSATION HISTORY:\n"
             if recent_logs.exists():
                 for log in reversed(recent_logs):

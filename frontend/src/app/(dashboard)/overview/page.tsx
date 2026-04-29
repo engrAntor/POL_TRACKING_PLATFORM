@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Package, Clock, TrendingDown, RefreshCw, AlertTriangle, AlertCircle, XCircle, ChevronRight } from 'lucide-react';
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api') + '/';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
 interface StockLevel {
     status: string;

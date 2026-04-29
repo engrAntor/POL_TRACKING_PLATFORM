@@ -19,8 +19,8 @@ export default function ContactPage() {
         setError('');
         try {
             const token = localStorage.getItem('access_token');
-            const aiBaseUrl = process.env.NEXT_PUBLIC_AI_API_URL || 'http://127.0.0.1:8001';
-            const res = await fetchWithAuth(`${aiBaseUrl}/api/ai/tickets/`, {
+            const aiBaseUrl = process.env.NEXT_PUBLIC_AI_API_URL || 'http://localhost:8000/api';
+            const res = await fetchWithAuth(`${aiBaseUrl}/ai/tickets/`, {
                 method: 'POST',
                 body: JSON.stringify({
                     name: form.name,

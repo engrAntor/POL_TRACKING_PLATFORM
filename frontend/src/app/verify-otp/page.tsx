@@ -4,7 +4,7 @@ import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
-const API_BASE = 'http://127.0.0.1:8000/api/auth';
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api') + '/auth';
 
 function VerifyOtpContent() {
     const searchParams = useSearchParams();

@@ -6,6 +6,7 @@ class SuperAdminNotification(models.Model):
     TYPE_CHOICES = (
         ('new_order', 'New Order Placed'),
         ('new_user', 'New User Registered'),
+        ('new_ticket', 'New Support Ticket'),
     )
 
     type = models.CharField(max_length=20, choices=TYPE_CHOICES)

@@ -125,7 +125,7 @@ class SellFromInventoryView(APIView):
         listing = Listing.objects.create(
             user=request.user,
             pol_item=pol_item,
-            name=pol_item.product_name or pol_item.description[:200] or pol_item.part_number,
+            name=pol_item.product_name or (pol_item.description or '')[:200] or pol_item.part_number,
             company=serializer.validated_data.get('company', ''),
             pol_type=serializer.validated_data.get('pol_type', 'petroleum'),
             price=serializer.validated_data['price'],
@@ -459,41 +459,48 @@ class StripeWebhookView(APIView):
             total_price = float(listing.price) * buyer_qty
             platform_commission = total_price * commission_rate
 
-            # Construct the descriptive order record
-            Order.objects.create(
-                user=buyer,
-                seller=seller,
+            # Construct the descriptive order record.
+            # Use get_or_create so that if VerifyPaymentView already processed
+            # this payment (frontend redirect), the webhook does not create a
+            # second Order for the same listing + buyer.
+            _, created = Order.objects.get_or_create(
                 listing=listing,
-                product_name=listing.name,
-                category=listing.pol_type.capitalize(),
-                brand=listing.company,  # Or listing.brand
-                phone=getattr(buyer, 'phone_number', ''), 
-                location=listing.location,
-                quantity=buyer_qty,
-                quantity_unit=listing.quantity_unit,
-                price_per_unit=listing.price,
-                total_price=total_price,
-                platform_commission=platform_commission,
-                batch_number=listing.batch_number,
-                expiry=listing.expiry,
-                shelf_life=listing.shelf_life,
-                status='approved'  # Paid successfully
+                user=buyer,
+                defaults=dict(
+                    seller=seller,
+                    product_name=listing.name,
+                    category=listing.pol_type.capitalize(),
+                    brand=listing.company,
+                    phone=getattr(buyer, 'phone_number', ''),
+                    location=listing.location,
+                    quantity=buyer_qty,
+                    quantity_unit=listing.quantity_unit,
+                    price_per_unit=listing.price,
+                    total_price=total_price,
+                    platform_commission=platform_commission,
+                    batch_number=listing.batch_number,
+                    expiry=listing.expiry,
+                    shelf_life=listing.shelf_life,
+                    status='approved',
+                ),
             )
 
-            # Deduct quantity from listing/inventory
-            listing.quantity = float(listing.quantity) - buyer_qty
-            if listing.quantity <= 0:
-                listing.status = 'sold'
-                listing.quantity = 0
-            listing.save()
+            # Only deduct inventory when this webhook created the order.
+            # If created=False, VerifyPaymentView already handled everything.
+            if created:
+                listing.quantity = float(listing.quantity) - buyer_qty
+                if listing.quantity <= 0:
+                    listing.status = 'sold'
+                    listing.quantity = 0
+                listing.save()
 
-            if listing.pol_item:
-                pol_item = listing.pol_item
-                try:
-                    pol_qty = float(pol_item.quantity) - buyer_qty
-                    pol_item.quantity = max(0.0, pol_qty)
-                    pol_item.save()
-                except (ValueError, TypeError):
-                    pass
+                if listing.pol_item:
+                    pol_item = listing.pol_item
+                    try:
+                        pol_qty = float(pol_item.quantity) - buyer_qty
+                        pol_item.quantity = max(0.0, pol_qty)
+                        pol_item.save()
+                    except (ValueError, TypeError):
+                        pass
 
         return Response({'status': 'success'})

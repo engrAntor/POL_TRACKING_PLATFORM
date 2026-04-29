@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Users, BarChart2, ChevronDown } from "lucide-react";
 
-const API_BASE = 'http://127.0.0.1:8000/api/superadmin';
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api') + '/superadmin';
 
 interface MonthlyData {
     month: string;

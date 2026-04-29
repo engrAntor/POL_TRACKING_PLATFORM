@@ -50,8 +50,8 @@ function PwInput({ label, show, onToggle, value, onChange }: { label: string; sh
     );
 }
 
-const API_AUTH = 'http://127.0.0.1:8000/api/auth';
-const API_BASE = 'http://127.0.0.1:8000';
+const API_AUTH = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api') + '/auth';
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api').replace(/\/api$/, '');
 const avatarUrl = (url?: string | null) => {
     if (!url) return '/assets/images/my_dp.png';
     if (url.startsWith('http')) return url;
@@ -108,7 +108,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
     const fetchBellNotifs = useCallback(async () => {
         try {
             const token = localStorage.getItem('access_token');
-            const res = await fetch('http://127.0.0.1:8000/api/superadmin/notifications/', {
+            const res = await fetch(`${API_BASE}/api/superadmin/notifications/`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (res.ok) {

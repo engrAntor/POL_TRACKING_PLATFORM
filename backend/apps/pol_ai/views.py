@@ -37,6 +37,7 @@ class AIChatView(APIView):
         try:
             ai_response = FaissRAGService.ask(query, user_id=user_id)
             AIConversationLog.objects.create(
+                user=request.user,
                 user_query=query,
                 ai_response=ai_response['message'],
                 intent_detected=ai_response.get('intent', 'unknown'),
@@ -74,6 +75,7 @@ class MarketplaceChatView(APIView):
         try:
             ai_response = MarketplaceFaissRAGService.ask(query, user_id=user_id)
             AIConversationLog.objects.create(
+                user=request.user,
                 user_query=query,
                 ai_response=ai_response['message'],
                 intent_detected=ai_response.get('intent', 'unknown'),
@@ -90,7 +92,7 @@ class AIConversationHistoryView(ListAPIView):
 
     def get_queryset(self):
         assistant = self.kwargs.get('assistant')
-        return AIConversationLog.objects.filter(assistant_name=assistant).order_by('-created_at')[:50]
+        return AIConversationLog.objects.filter(assistant_name=assistant, user=self.request.user).order_by('-created_at')[:50]
 
 
 class SupportTicketCreateView(APIView):

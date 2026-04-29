@@ -600,7 +600,10 @@ class StripeConnectVerifyView(APIView):
 
         try:
             account = stripe.Account.retrieve(user.stripe_account_id)
-            if account.details_submitted and account.charges_enabled and account.payouts_enabled:
+            # charges_enabled is sufficient for marketplace destination charges.
+            # payouts_enabled is a separate Stripe review step and should not
+            # block a seller from listing — Stripe enables it asynchronously.
+            if account.details_submitted and account.charges_enabled:
                 user.stripe_onboarding_complete = True
                 user.save()
                 return Response({'status': 'complete', 'message': 'Stripe onboarding successful.'})
