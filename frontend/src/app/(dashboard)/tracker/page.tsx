@@ -32,7 +32,7 @@ interface POLItem {
     updated_at: string;
 }
 
-const API_BASE = 'http://127.0.0.1:8000/api/dashboard';
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api') + '/dashboard';
 
 const typeLabels: Record<string, string> = {
     petroleum: 'Petroleum', oil: 'Oil', lubricant: 'Lubricant',
@@ -79,7 +79,7 @@ export default function TrackerPage() {
         const refresh = localStorage.getItem('refresh_token');
         if (!refresh) return null;
         try {
-            const res = await fetch('http://127.0.0.1:8000/api/accounts/token/refresh/', {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/accounts/token/refresh/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ refresh }),
@@ -109,7 +109,7 @@ export default function TrackerPage() {
 
     const fetchPols = useCallback(async () => {
         try {
-            const res = await authFetch(`${API_BASE}/tracker/`);
+            const res = await authFetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/tracker/`);
             if (res.ok) {
                 const data = await res.json();
                 setPols(Array.isArray(data) ? data : data.results || []);
@@ -166,8 +166,8 @@ export default function TrackerPage() {
         e.preventDefault();
         try {
             const url = editingItem
-                ? `${API_BASE}/tracker/${editingItem.id}/`
-                : `${API_BASE}/tracker/create/`;
+                ? `${process.env.NEXT_PUBLIC_API_URL}/dashboard/tracker/${editingItem.id}/`
+                : `${process.env.NEXT_PUBLIC_API_URL}/dashboard/tracker/create/`;
             const method = editingItem ? 'PATCH' : 'POST';
 
             // Build FormData to support image upload
@@ -227,7 +227,7 @@ export default function TrackerPage() {
     const handleDelete = async (id: number) => {
         if (!confirm('Are you sure you want to delete this item?')) return;
         try {
-            const res = await authFetch(`${API_BASE}/tracker/${id}/`, {
+            const res = await authFetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/tracker/${id}/`, {
                 method: 'DELETE',
             });
             if (res.ok) fetchPols();
@@ -245,7 +245,7 @@ export default function TrackerPage() {
         fd.append('file', uploadFile);
 
         try {
-            const res = await authFetch(`${API_BASE}/upload-csv/`, {
+            const res = await authFetch(`${process.env.NEXT_PUBLIC_API_URL}/dashboard/upload-csv/`, {
                 method: 'POST',
                 body: fd,
             });
