@@ -165,6 +165,7 @@ export default function TrackerPage() {
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            const url = editingItem
                 ? getApiUrl(`/dashboard/tracker/${editingItem.id}/`)
                 : getApiUrl(`/dashboard/tracker/create/`);
             const method = editingItem ? 'PATCH' : 'POST';
