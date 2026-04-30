@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { fetchWithAuth } from '@/lib/fetchWithAuth';
+import { CONFIG } from '@/lib/config';
 
 import { CheckCircle } from 'lucide-react';
 
@@ -20,7 +21,7 @@ export default function UserIssuesPage() {
 
     const fetchTickets = async () => {
         try {
-            const aiBaseUrl = process.env.NEXT_PUBLIC_AI_API_URL || 'http://localhost:8000/api';
+            const aiBaseUrl = CONFIG.AI_API_URL;
             const res = await fetchWithAuth(`${aiBaseUrl}/ai/tickets/admin/`);
             if (res.ok) {
                 const data = await res.json();
@@ -39,7 +40,7 @@ export default function UserIssuesPage() {
 
     const handleUpdateStatus = async (id: string, newStatus: string) => {
         try {
-            const aiBaseUrl = process.env.NEXT_PUBLIC_AI_API_URL || 'http://localhost:8000/api';
+            const aiBaseUrl = CONFIG.AI_API_URL;
             const res = await fetchWithAuth(`${aiBaseUrl}/ai/tickets/admin/${id}/`, {
                 method: 'PATCH',
                 body: JSON.stringify({ status: newStatus })

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { fetchWithAuth } from '@/lib/fetchWithAuth';
+import { CONFIG } from '@/lib/config';
 
 export default function ContactPage() {
     const [form, setForm] = useState({ name: '', email: '', slNo: '', description: '' });
@@ -19,8 +20,7 @@ export default function ContactPage() {
         setError('');
         try {
             const token = localStorage.getItem('access_token');
-            const aiBaseUrl = process.env.NEXT_PUBLIC_AI_API_URL || 'http://localhost:8000/api';
-            const res = await fetchWithAuth(`${aiBaseUrl}/ai/tickets/`, {
+            const res = await fetchWithAuth(`${CONFIG.AI_API_URL}/ai/tickets/`, {
                 method: 'POST',
                 body: JSON.stringify({
                     name: form.name,

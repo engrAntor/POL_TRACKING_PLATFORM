@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Pencil, Trash2, Plus, X } from "lucide-react";
+import { CONFIG } from '@/lib/config';
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api') + '/superadmin';
+const API_BASE = CONFIG.API_URL + '/superadmin';
 
 interface Admin {
     id: number;

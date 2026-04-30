@@ -2,8 +2,9 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { CONFIG } from '@/lib/config';
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api') + '/auth';
+const API_BASE = CONFIG.API_URL + '/auth';
 
 export default function SuperAdminForgotPasswordPage() {
     const [email, setEmail] = useState('');

@@ -3,8 +3,9 @@
 import React, { useState, Suspense } from 'react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { CONFIG } from '@/lib/config';
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api') + '/auth';
+const API_BASE = CONFIG.API_URL + '/auth';
 
 function ResetPasswordContent() {
     const searchParams = useSearchParams();

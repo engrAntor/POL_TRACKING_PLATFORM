@@ -7,8 +7,10 @@ import { MapPin, Filter, ChevronDown, Sparkles, X, Send, MessageSquareText, Minu
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api') + '/marketplace';
-const API_AUTH = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api') + '/auth';
+import { CONFIG } from '@/lib/config';
+
+const API_BASE = CONFIG.API_URL + '/marketplace';
+const API_AUTH = CONFIG.API_URL + '/auth';
 
 interface Listing {
     id: number;
@@ -197,8 +199,7 @@ export default function MarketplacePage() {
         setIsAiTyping(true);
 
         try {
-            const aiBaseUrl = process.env.NEXT_PUBLIC_AI_API_URL || 'http://localhost:8000/api';
-            const res = await fetchWithAuth(`${aiBaseUrl}/ai/marketplace-chat/`, {
+            const res = await fetchWithAuth(`${CONFIG.AI_API_URL}/ai/marketplace-chat/`, {
                 method: 'POST',
                 body: JSON.stringify({ query: userMsg }),
             });

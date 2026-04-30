@@ -3,8 +3,9 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { CONFIG } from '@/lib/config';
 
-const API_AUTH = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api') + '/auth';
+const API_AUTH = CONFIG.API_URL + '/auth';
 
 function StripeReturnContent() {
     const router = useRouter();
