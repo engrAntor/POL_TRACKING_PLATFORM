@@ -4,8 +4,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL + '/auth';
-const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+import { getApiUrl, CONFIG } from "@/lib/config";
 
 export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false);
@@ -40,7 +39,7 @@ export default function LoginPage() {
 
         (async () => {
             try {
-                const res = await fetch(`${API_BASE}/google-login/`, {
+                const res = await fetch(getApiUrl(`/auth/google-login/`), {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ credential: idToken }),
@@ -62,7 +61,7 @@ export default function LoginPage() {
 
     const handleGoogleClick = () => {
         const redirectUri = window.location.origin + "/login";
-        const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=id_token&scope=openid%20email%20profile&nonce=${Date.now()}`;
+        const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CONFIG.GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=id_token&scope=openid%20email%20profile&nonce=${Date.now()}`;
         window.location.href = url;
     };
 
@@ -72,7 +71,7 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
-            const res = await fetch(`${API_BASE}/login/`, {
+            const res = await fetch(getApiUrl(`/auth/login/`), {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password }),

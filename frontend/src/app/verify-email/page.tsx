@@ -21,7 +21,7 @@ function VerifyEmailContent() {
         setStatus("loading");
         try {
             const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/auth/verify-email/?token=${token}`
+                getApiUrl(`/auth/verify-email/?token=${token}`)
             );
             const data = await res.json();
 

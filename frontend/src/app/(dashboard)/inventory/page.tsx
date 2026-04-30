@@ -6,7 +6,7 @@ import { Search, Sparkles, X, Send, MessageSquareText, ChevronLeft, ChevronRight
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api') + '/dashboard';
+import { getApiUrl, CONFIG } from "@/lib/config";
 
 interface InventoryItem {
     id: number;
@@ -73,7 +73,7 @@ export default function InventoryPage() {
         const refresh = localStorage.getItem('refresh_token');
         if (!refresh) return null;
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/accounts/token/refresh/`, {
+            const res = await fetch(getApiUrl(`/accounts/token/refresh/`), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ refresh }),
@@ -103,7 +103,7 @@ export default function InventoryPage() {
 
     const fetchInventory = useCallback(async () => {
         try {
-            const res = await authFetch(`${API_BASE}/inventory/`);
+            const res = await authFetch(getApiUrl(`/dashboard/inventory/`));
             if (res.ok) {
                 const data = await res.json();
                 setItems(Array.isArray(data) ? data : data.results || []);
@@ -129,7 +129,7 @@ export default function InventoryPage() {
         setIsAiTyping(true);
 
         try {
-            const aiBaseUrl = process.env.NEXT_PUBLIC_AI_API_URL || 'http://localhost:8000/api';
+            const aiBaseUrl = CONFIG.AI_API_URL.endsWith('/') ? CONFIG.AI_API_URL.slice(0, -1) : CONFIG.AI_API_URL;
             const res = await fetchWithAuth(`${aiBaseUrl}/ai/chat/`, {
                 method: 'POST',
                 body: JSON.stringify({ query: userMsg }),

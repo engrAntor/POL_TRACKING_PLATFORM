@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL + '/auth';
+import { getApiUrl } from "@/lib/config";
 
 export default function RegisterPage() {
     const [showPassword, setShowPassword] = useState(false);
@@ -37,7 +37,7 @@ export default function RegisterPage() {
 
         setLoading(true);
         try {
-            const res = await fetch(`${API_BASE}/register/`, {
+            const res = await fetch(getApiUrl(`/auth/register/`), {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(form),

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Package, Clock, TrendingDown, RefreshCw, AlertTriangle, AlertCircle, XCircle, ChevronRight } from 'lucide-react';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+import { getApiUrl } from "@/lib/config";
 
 interface StockLevel {
     status: string;
@@ -58,8 +58,8 @@ export default function OverviewPage() {
         try {
             const headers = { Authorization: `Bearer ${getToken()}` };
             const [overviewRes, trackerRes] = await Promise.all([
-                fetch(`${API_BASE}/dashboard/overview/`, { headers }),
-                fetch(`${API_BASE}/dashboard/tracker/`, { headers }),
+                fetch(getApiUrl(`/dashboard/overview/`), { headers }),
+                fetch(getApiUrl(`/dashboard/tracker/`), { headers }),
             ]);
 
             if (overviewRes.ok) {

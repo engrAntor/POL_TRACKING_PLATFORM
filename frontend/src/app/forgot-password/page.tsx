@@ -2,8 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api') + '/auth';
+import { getApiUrl } from "@/lib/config";
 
 export default function ForgotPasswordPage() {
     const [email, setEmail] = useState('');
@@ -17,7 +16,7 @@ export default function ForgotPasswordPage() {
         setLoading(true);
 
         try {
-            const res = await fetch(`${API_BASE}/send-otp/`, {
+            const res = await fetch(getApiUrl(`/auth/send-otp/`), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, purpose: 'reset' }),
