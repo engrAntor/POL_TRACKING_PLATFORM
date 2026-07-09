@@ -5,8 +5,11 @@ A full-stack inventory and order management system built to **track, manage, and
 **Below is the full presentation video walking through every feature of the platform in detail:**<br>
 📹 Video Link: https://drive.google.com/file/d/1DyC9Vxe6nUQbo6U15trIA-qL0ODeRsqn/view?usp=sharing
 
+**Live Link:**<br>
+https://aerovectranexus.com
+
 **Admin Panel:**<br>
-https://poltrackingbyantor.netlify.app/
+https://poltrackingbyantor.netlify.app
 
 **Super Admin Panel:**<br>
 https://poltrackingbyantor.netlify.app/superadmindash
